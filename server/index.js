@@ -2,7 +2,23 @@ require('dotenv').config();
 const express = require('express'), cors = require('cors'), bcrypt = require('bcryptjs'), jwt = require('jsonwebtoken'), pool = require('./db');
 const q = (s, p) => pool.query(s, p).then(r => r.rows);
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL || true }));
+
+// CLIENT_URL may be a comma-separated list and may accidentally include a
+// trailing slash. Browsers never send the slash, so normalise both sides or
+// every request from the deployed site gets blocked by CORS.
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map(s => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    const clean = origin.replace(/\/+$/, '');
+    const localDev = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(clean);
+    if (!allowedOrigins.length || allowedOrigins.includes(clean) || localDev) return cb(null, true);
+    return cb(null, false);
+  },
+}));
 app.use(express.json());
 const sign = u => jwt.sign({ id: u.id, role: u.role, name: u.name }, process.env.JWT_SECRET, { expiresIn: '7d' });
 const auth = roles => (req, res, next) => {
@@ -113,4 +129,15 @@ app.get('/api/admin/stats', auth(['admin']), wrap(async (req, res) => {
   res.json(r);
 }));
 app.get('/', (req, res) => res.send('ThanziLearn API is running'));
-app.listen(process.env.PORT || 5000, () => console.log('API running'));
+
+// Keep older databases in step with the columns the API queries. Running this
+// on boot means a deploy never fails just because a migration was forgotten.
+(async () => {
+  try {
+    await pool.query("alter table courses add column if not exists skills jsonb not null default '[]'");
+    await pool.query('alter table lessons add column if not exists duration_min int not null default 5');
+  } catch (e) {
+    console.error('Schema check failed:', e.message);
+  }
+  app.listen(process.env.PORT || 5000, () => console.log('API running'));
+})();

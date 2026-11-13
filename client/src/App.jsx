@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminCourses, CourseEditor, Dashboard, Users } from './Admin.jsx';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://thanzilearn.onrender.com' : 'http://localhost:5000');
 
 const Ctx = createContext(null);
 const useAuth = () => useContext(Ctx);
