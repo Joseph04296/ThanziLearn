@@ -43,6 +43,7 @@ const Icon = ({ name, className = 'h-5 w-5' }) => {
   if (name === 'globe') return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>;
   if (name === 'bell') return <svg {...p}><path d="M18 8a6 6 0 1 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>;
   if (name === 'chevron') return <svg {...p}><path d="m6 9 6 6 6-6"/></svg>;
+  if (name === 'home') return <svg {...p}><path d="m3 10.5 9-7.5 9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.5 20v-6h5v6"/></svg>;
   return <svg {...p}><circle cx="12" cy="12" r="9"/></svg>;
 };
 
@@ -59,6 +60,7 @@ const SAMPLE_COURSES = [
     title: 'Safe medication administration',
     category: 'Patient safety',
     level: 'Beginner',
+    image: '/images/medication.jpg',
     description: 'The five rights, allergy checks and recording, for safer medicine rounds.',
     about: [
       'Every medicine round carries risk. This short course walks through the practical checks that prevent the most common medication errors, from confirming the right patient to recording a dose correctly.',
@@ -84,6 +86,7 @@ const SAMPLE_COURSES = [
     title: 'TB basics for frontline staff',
     category: 'Infectious disease',
     level: 'Beginner',
+    image: '/images/TB.jpg',
     description: 'How TB spreads, how to spot possible cases, and how to protect yourself and others.',
     about: [
       'Tuberculosis is still one of the most common infectious diseases in the region, and frontline staff are often the first to notice the signs. This course covers how TB spreads, who is most at risk, and how to refer a patient for testing.',
@@ -109,6 +112,7 @@ const SAMPLE_COURSES = [
     title: 'AI in healthcare: the basics',
     category: 'Digital health',
     level: 'Beginner',
+    image: '/images/Ai+health.jpg',
     description: 'What AI tools can and cannot do, and how to use their results carefully.',
     about: [
       'AI tools are increasingly used to read scans, flag risk and support triage. This introductory course explains what these tools actually do, where they help, and where clinical judgement must stay in charge.',
@@ -693,6 +697,7 @@ function Preview() {
           questions: local.questions,
           skills: local.outcomes,
           about: local.about,
+          image: local.image,
           sample: true,
         },
         lessons: local.curriculum,
@@ -727,21 +732,34 @@ function Preview() {
 
   return (
     <>
-      {/* Compact course header: no image, no full-height hero */}
-      <section className="border-b border-border bg-[#0B1F33]">
-        <div className="mx-auto max-w-[1200px] px-4 py-9 sm:px-5 md:py-12 lg:px-10">
-          <nav className="flex items-center gap-2 text-[12px] text-white/60" aria-label="Breadcrumb">
-            <Link to="/courses" className="transition hover:text-white">Courses</Link>
-            <span aria-hidden="true">/</span>
-            <span className="text-white/80">{course.category || 'Healthcare'}</span>
+      {/* White course header: breadcrumb, summary and course image */}
+      <section className="border-b border-border bg-white">
+        <div className="mx-auto max-w-[1200px] px-4 pb-8 pt-5 sm:px-5 md:pb-12 lg:px-10">
+          <nav className="flex min-w-0 items-center gap-2 text-[12px] text-muted" aria-label="Breadcrumb">
+            <Link to="/" className="inline-flex items-center transition hover:text-teal" aria-label="Home">
+              <Icon name="home" className="h-4 w-4" />
+            </Link>
+            <span aria-hidden="true" className="text-border">/</span>
+            <Link to="/courses" className="transition hover:text-teal">Courses</Link>
+            <span aria-hidden="true" className="text-border">/</span>
+            <span className="truncate text-body" aria-current="page">{course.title}</span>
           </nav>
-          <h1 className="mt-3 max-w-3xl break-words font-display text-[1.65rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem] md:text-[2.25rem]" style={{ color: '#FFFFFF' }}>{course.title}</h1>
-          <p className="mt-2.5 max-w-2xl text-[14px] leading-6 text-white/75">{course.description}</p>
+
+          <div className="mt-6 grid min-w-0 items-center gap-6 md:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+            <div className="min-w-0">
+              <p className={eyebrowCls}>{course.category || 'Healthcare'}</p>
+              <h1 className="mt-2 break-words font-display text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-forest sm:text-[2rem] md:text-[2.35rem]">{course.title}</h1>
+              <p className="mt-3 max-w-xl text-[15px] leading-7 text-body">{course.description}</p>
+            </div>
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-canvas">
+              <img src={courseImage(course)} alt={course.title} className="aspect-[16/10] w-full object-cover" />
+            </div>
+          </div>
         </div>
       </section>
       <Wrap>
-        {/* Quick facts, lifted over the header edge */}
-        <div className={card + ' -mt-8 md:-mt-10'}>
+        {/* Quick facts */}
+        <div className={card}>
           <div className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-4">
             {facts.map(f => (
               <div key={f.label} className="flex min-w-0 items-center gap-2.5">
