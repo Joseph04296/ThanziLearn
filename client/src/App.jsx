@@ -624,14 +624,25 @@ function Preview() {
 
   return (
     <>
-      <PageHero eyebrow={course.category || 'Course'} title={course.title} text={course.description} image="/images/course.jpg" />
+      {/* Compact course header: no image, no full-height hero */}
+      <section className="border-b border-border bg-teal">
+        <div className="mx-auto max-w-[1200px] px-5 py-9 md:py-12 lg:px-10">
+          <nav className="flex items-center gap-2 text-[12px] text-white/60" aria-label="Breadcrumb">
+            <Link to="/courses" className="transition hover:text-white">Courses</Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-white/80">{course.category || 'Healthcare'}</span>
+          </nav>
+          <h1 className="mt-3 max-w-3xl font-display text-[1.65rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem] md:text-[2.25rem]" style={{ color: '#FFFFFF' }}>{course.title}</h1>
+          <p className="mt-2.5 max-w-2xl text-[14px] leading-6 text-white/75">{course.description}</p>
+        </div>
+      </section>
       <Wrap>
-        {/* Quick facts, lifted over the hero edge */}
-        <div className={card + ' -mt-8 md:-mt-12'}>
+        {/* Quick facts, lifted over the header edge */}
+        <div className={card + ' -mt-8 md:-mt-10'}>
           <div className="grid grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-4">
             {facts.map(f => (
               <div key={f.label} className="flex items-center gap-2.5">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mint text-teal"><Icon name={f.icon} className="h-4 w-4" /></span>
+                <Icon name={f.icon} className="h-4 w-4 shrink-0 text-forest" />
                 <div>
                   <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted">{f.label}</div>
                   <div className="text-[13px] font-medium text-forest">{f.value}</div>
