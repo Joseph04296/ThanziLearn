@@ -13,10 +13,10 @@ async function api(path, opts = {}) {
   return d;
 }
 
-const inp = 'w-full rounded-xl border border-ink/15 bg-white px-3 py-2.5 text-sm focus:border-lake';
-const btn = 'inline-flex items-center justify-center rounded-xl bg-lake px-4 py-2.5 font-semibold text-white hover:bg-ink disabled:opacity-60';
-const ghost = 'inline-flex items-center justify-center rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm font-medium hover:border-lake/40 hover:text-lake';
-const card = 'rounded-2xl border border-ink/10 bg-white p-5 shadow-sm';
+const inp = 'w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm focus:border-lake';
+const btn = 'inline-flex items-center justify-center rounded-lg bg-lake px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0c3d68] disabled:opacity-60';
+const ghost = 'inline-flex items-center justify-center rounded-lg border border-border bg-white px-3 py-2 text-[13px] font-medium hover:border-lake/40 hover:text-lake';
+const card = 'rounded-xl border border-border bg-white p-5';
 
 export function CourseEditor() {
   const { id } = useParams();
@@ -41,11 +41,11 @@ export function CourseEditor() {
   return (
     <form onSubmit={save} className="max-w-4xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-lake">Admin</p><h1 className="font-display text-3xl font-bold">{id ? 'Edit course' : 'New course'}</h1></div>
+        <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-lake">Admin</p><h1 className="font-display text-2xl font-semibold">{id ? 'Edit course' : 'New course'}</h1></div>
         <Link to="/admin/courses" className={ghost}>Back to courses</Link>
       </div>
       <section className={card + ' space-y-4'}>
-        <h2 className="font-display text-xl font-bold">Course details</h2>
+        <h2 className="font-display text-lg font-semibold">Course details</h2>
         <label className="block text-sm font-medium">Title<input className={inp + ' mt-1'} required placeholder="Course title" value={c.title} onChange={e => up('title', e.target.value)} /></label>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block text-sm font-medium">Category<input className={inp + ' mt-1'} placeholder="e.g. Patient safety" value={c.category || ''} onChange={e => up('category', e.target.value)} /></label>
@@ -56,7 +56,7 @@ export function CourseEditor() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-display text-2xl font-bold">Lessons</h2>
+        <h2 className="font-display text-lg font-semibold">Lessons</h2>
         {c.lessons.map((l, i) => (
           <div key={i} className={card + ' space-y-3'}>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-ink/60">Lesson {i + 1}</div>
@@ -77,7 +77,7 @@ export function CourseEditor() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-display text-2xl font-bold">Quiz questions</h2>
+        <h2 className="font-display text-lg font-semibold">Quiz questions</h2>
         {c.questions.map((x, i) => (
           <div key={i} className={card + ' space-y-3'}>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-ink/60">Question {i + 1}</div>
@@ -120,10 +120,10 @@ export function Users() {
   if (!u) return <p className="text-sm text-ink/70">Loading users…</p>;
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold">Users</h1>
+      <h1 className="font-display text-2xl font-semibold">Users</h1>
       <p className="mt-2 mb-5 text-sm text-ink/70">Manage user roles. Role changes apply on the user’s next login.</p>
       {err && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
-      <div className="overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-white">
         <table className="w-full text-sm"><thead><tr className="border-b border-ink/10 text-left text-ink/60"><th className="p-3">Name</th><th className="p-3">Email</th><th className="p-3">Role</th></tr></thead>
           <tbody>{u.map(x => (
             <tr key={x.id} className="border-t border-ink/10">
@@ -151,9 +151,9 @@ export function Dashboard() {
   const items = [['Learners', d.learners], ['Courses', d.courses], ['Lessons completed', d.lessons_done], ['Certificates earned', d.certificates]];
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold">Admin dashboard</h1>
+      <h1 className="font-display text-2xl font-semibold">Admin dashboard</h1>
       <p className="mt-2 text-sm text-ink/70">Overview of platform activity.</p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{items.map(([k, v]) => <div key={k} className={card}><p className="font-display text-3xl font-bold text-ink">{v}</p><p className="mt-1 text-sm text-ink/70">{k}</p></div>)}</div>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{items.map(([k, v]) => <div key={k} className={card}><p className="font-display text-2xl font-semibold text-ink">{v}</p><p className="mt-1 text-sm text-ink/70">{k}</p></div>)}</div>
       <div className="mt-8 flex flex-wrap gap-3"><Link to="/admin/new" className={btn}>Add a course</Link><Link to="/admin/progress" className={ghost}>View learner progress</Link></div>
     </div>
   );
@@ -168,7 +168,7 @@ export function AdminCourses() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="font-display text-3xl font-bold">Courses</h1><p className="mt-1 text-sm text-ink/70">Create and manage learning content.</p></div>
+        <div><h1 className="font-display text-2xl font-semibold">Courses</h1><p className="mt-1 text-sm text-ink/70">Create and manage learning content.</p></div>
         <Link to="/admin/new" className={btn}>Add a course</Link>
       </div>
       {!c.length ? <div className={card + ' text-center text-ink/70'}>No courses yet. Add your first course to get started.</div> : (

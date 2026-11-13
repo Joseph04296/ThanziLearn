@@ -7,11 +7,21 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const Ctx = createContext(null);
 const useAuth = () => useContext(Ctx);
 
-const inp = 'h-[52px] w-full rounded-xl border border-border bg-white px-4 text-sm text-forest placeholder:text-muted focus:border-teal';
-const btn = 'inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-teal px-6 font-semibold text-white transition hover:bg-[#145c51] disabled:cursor-not-allowed disabled:opacity-60';
-const btnOutline = 'inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-forest/20 bg-transparent px-6 font-semibold text-forest transition hover:border-teal hover:text-teal';
-const btnSoft = 'inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-white px-6 font-semibold text-forest transition hover:border-teal/40 hover:text-teal';
-const card = 'rounded-[14px] border border-border bg-white p-6 shadow-sm';
+const inp = 'h-11 w-full rounded-lg border border-border bg-white px-3.5 text-sm text-forest placeholder:text-muted/80 transition focus:border-teal';
+const btn = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-teal px-5 text-sm font-semibold text-white transition hover:bg-[#0c3d68] disabled:cursor-not-allowed disabled:opacity-60';
+const btnOutline = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
+const btnSoft = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-white px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
+const card = 'rounded-xl border border-border bg-white p-6';
+
+// Shared type scale: one eyebrow, one heading hierarchy and one body size across pages.
+const eyebrowCls = 'text-[11px] font-semibold uppercase tracking-[0.14em] text-teal';
+const eyebrowOnDark = 'text-[11px] font-semibold uppercase tracking-[0.14em] text-mint/90';
+const h1Cls = 'font-display text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] text-forest sm:text-[2.5rem]';
+const h2Cls = 'font-display text-2xl font-semibold leading-[1.2] tracking-[-0.015em] text-forest md:text-[2rem]';
+const h3Cls = 'font-display text-base font-semibold text-forest md:text-[1.0625rem]';
+const bodyCls = 'text-[15px] leading-7 text-body md:text-base';
+const sectionCls = 'py-14 md:py-20';
+
 
 const Icon = ({ name, className = 'h-5 w-5' }) => {
   const p = { className, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' };
@@ -80,16 +90,16 @@ function useCourses() {
 
 function StateBox({ title, text, action }) {
   return (
-    <div className="rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
-      <h3 className="font-display text-xl font-bold text-ink">{title}</h3>
-      {text && <p className="mt-2 text-sm text-ink/70">{text}</p>}
-      {action && <div className="mt-4 flex justify-center">{action}</div>}
+    <div className="rounded-xl border border-dashed border-border bg-white p-8 text-center">
+      <h3 className="font-display text-lg font-semibold text-ink">{title}</h3>
+      {text && <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-body">{text}</p>}
+      {action && <div className="mt-5 flex justify-center">{action}</div>}
     </div>
   );
 }
 
 function Loading({ label = 'Loading…' }) {
-  return <div className="rounded-2xl border border-ink/10 bg-white p-6 text-sm text-ink/70 shadow-sm">{label}</div>;
+  return <div className="rounded-xl border border-border bg-white p-6 text-sm text-body">{label}</div>;
 }
 
 function Notice({ type = 'info', children }) {
@@ -116,29 +126,29 @@ function Site({ children }) {
     <div className="min-h-screen bg-canvas text-body">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-forest">Skip to content</a>
       <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur print:hidden">
-        <div className="mx-auto flex h-20 max-w-[1200px] items-center justify-between gap-4 px-5 lg:px-10">
-          <Link to="/" className="font-display text-xl font-bold tracking-tight text-forest md:text-2xl">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-4 px-5 lg:px-10">
+          <Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-forest md:text-xl">
             Thanzi<span className="text-teal">Learn</span>
           </Link>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-body md:flex" aria-label="Primary">
+          <nav className="hidden items-center gap-7 text-sm font-medium md:flex" aria-label="Primary">
             {nav.map(item => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => isActive ? 'text-teal' : 'text-forest/80 hover:text-teal'}>{item.label}</NavLink>
+              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => isActive ? 'text-teal' : 'text-body hover:text-teal'}>{item.label}</NavLink>
             ))}
           </nav>
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-2 md:flex">
             {user ? (
               <>
-                <Link to={user.role === 'admin' ? '/admin' : '/learn'} className="text-sm font-semibold text-forest hover:text-teal">{user.role === 'admin' ? 'Admin' : 'My Learning'}</Link>
-                <button onClick={logout} className="inline-flex h-12 items-center rounded-xl px-5 text-sm font-semibold text-forest hover:text-teal">Log out</button>
+                <Link to={user.role === 'admin' ? '/admin' : '/learn'} className="px-3 text-sm font-semibold text-forest hover:text-teal">{user.role === 'admin' ? 'Admin' : 'My Learning'}</Link>
+                <button onClick={logout} className="inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium text-body hover:text-teal">Log out</button>
               </>
             ) : (
               <>
-                <Link to="/login" className="inline-flex h-12 items-center rounded-xl px-4 text-sm font-semibold text-forest hover:text-teal">Sign In</Link>
-                <Link to="/register" className="inline-flex h-12 items-center justify-center rounded-xl bg-teal px-6 text-sm font-semibold text-white transition hover:bg-[#145c51]">Get Started</Link>
+                <Link to="/login" className="inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium text-forest hover:text-teal">Sign In</Link>
+                <Link to="/register" className="inline-flex h-10 items-center justify-center rounded-lg bg-teal px-4 text-sm font-semibold text-white transition hover:bg-[#0c3d68]">Get Started</Link>
               </>
             )}
           </div>
-          <button onClick={() => setOpen(v => !v)} className="inline-flex items-center justify-center rounded-xl border border-border p-2.5 text-forest md:hidden" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Close menu' : 'Open menu'}>
+          <button onClick={() => setOpen(v => !v)} className="inline-flex items-center justify-center rounded-lg border border-border p-2 text-forest md:hidden" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Close menu' : 'Open menu'}>
             <Icon name={open ? 'x' : 'menu'} className="h-5 w-5" />
           </button>
         </div>
@@ -155,8 +165,8 @@ function Site({ children }) {
                 </>
               ) : (
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  <Link to="/login" className="inline-flex h-12 items-center justify-center rounded-xl border border-border font-semibold text-forest">Sign In</Link>
-                  <Link to="/register" className="inline-flex h-12 items-center justify-center rounded-xl bg-teal font-semibold text-white">Get Started</Link>
+                  <Link to="/login" className="inline-flex h-10 items-center justify-center rounded-lg border border-border text-sm font-medium text-forest">Sign In</Link>
+                  <Link to="/register" className="inline-flex h-10 items-center justify-center rounded-lg bg-teal text-sm font-semibold text-white">Get Started</Link>
                 </div>
               )}
             </nav>
@@ -165,32 +175,32 @@ function Site({ children }) {
       </header>
       <main id="main" className="flex-1">{children}</main>
       <footer className="bg-white print:hidden">
-        <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-14 md:grid-cols-2 lg:grid-cols-4 lg:px-10">
+        <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 md:grid-cols-2 lg:grid-cols-4 lg:px-10">
           <div>
-            <Link to="/" className="font-display text-xl font-bold text-forest">
+            <Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-forest">
               Thanzi<span className="text-teal">Learn</span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-body">Learn. Grow. Strengthen Healthcare.</p>
+            <p className="mt-3 max-w-xs text-sm leading-6 text-body">Learn. Grow. Strengthen Healthcare.</p>
           </div>
           <div>
-            <h3 className="font-semibold text-forest">Explore</h3>
-            <ul className="mt-4 space-y-3 text-sm text-body">
+            <h3 className="text-sm font-semibold text-forest">Explore</h3>
+            <ul className="mt-3 space-y-2.5 text-sm text-body">
               <li><Link to="/" className="hover:text-teal">Home</Link></li>
               <li><Link to="/courses" className="hover:text-teal">Courses</Link></li>
               <li><Link to="/about" className="hover:text-teal">About Us</Link></li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold text-forest">Account</h3>
-            <ul className="mt-4 space-y-3 text-sm text-body">
+            <h3 className="text-sm font-semibold text-forest">Account</h3>
+            <ul className="mt-3 space-y-2.5 text-sm text-body">
               <li><Link to="/login" className="hover:text-teal">Sign In</Link></li>
               <li><Link to="/register" className="hover:text-teal">Create Account</Link></li>
               <li><Link to={user ? (user.role === 'admin' ? '/admin' : '/learn/my-learning') : '/login'} className="hover:text-teal">My Learning</Link></li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold text-forest">Support</h3>
-            <ul className="mt-4 space-y-3 text-sm text-body">
+            <h3 className="text-sm font-semibold text-forest">Support</h3>
+            <ul className="mt-3 space-y-2.5 text-sm text-body">
               <li><Link to="/contact" className="hover:text-teal">Contact Us</Link></li>
               <li><Link to="/privacy" className="hover:text-teal">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-teal">Terms of Use</Link></li>
@@ -198,33 +208,28 @@ function Site({ children }) {
           </div>
         </div>
         <div className="border-t border-border">
-          <div className="mx-auto max-w-[1200px] px-5 py-5 text-sm text-muted lg:px-10">© 2026 ThanziLearn. All rights reserved.</div>
+          <div className="mx-auto max-w-[1200px] px-5 py-4 text-[13px] text-muted lg:px-10">© 2026 ThanziLearn. All rights reserved.</div>
         </div>
       </footer>
     </div>
   );
 }
 
-function Wrap({ children }) { return <div className="mx-auto max-w-[1200px] px-5 py-12 lg:px-10 lg:py-16">{children}</div>; }
+function Wrap({ children }) { return <div className="mx-auto max-w-[1200px] px-5 py-12 md:py-16 lg:px-10">{children}</div>; }
 
 // Shared hero for every page except the home page. Fixed height, one text column
 // and one type scale so all inner pages feel part of the same family.
 function PageHero({ eyebrow, title, text, image = '/images/herobg1.jpg' }) {
   return (
-    <section className="relative isolate h-[420px] overflow-hidden bg-forest md:h-[440px] lg:h-[460px]">
+    <section className="relative isolate h-[360px] overflow-hidden bg-forest sm:h-[400px] lg:h-[440px]">
       <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
-      <div className="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/80 to-forest/45" />
-      <div className="absolute inset-0 bg-gradient-to-t from-forest/80 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-forest/90 via-forest/65 to-forest/25" />
+      <div className="absolute inset-0 bg-gradient-to-t from-forest/75 via-transparent to-transparent" />
       <div className="relative mx-auto flex h-full max-w-[1200px] items-center px-5 lg:px-10">
         <div className="max-w-2xl">
-          {eyebrow && (
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-orange" aria-hidden="true" />
-              {eyebrow}
-            </p>
-          )}
-          <h1 className="font-display text-4xl font-extrabold leading-[1.1] text-white md:text-5xl" style={{ color: '#FFFFFF' }}>{title}</h1>
-          {text && <p className="mt-4 line-clamp-3 max-w-xl text-base leading-7 text-white/85 md:text-lg">{text}</p>}
+          {eyebrow && <p className={`mb-3 ${eyebrowOnDark}`}>{eyebrow}</p>}
+          <h1 className={`${h1Cls} text-white`} style={{ color: '#FFFFFF' }}>{title}</h1>
+          {text && <p className="mt-3 line-clamp-3 max-w-xl text-[15px] leading-7 text-white/80 md:text-base">{text}</p>}
         </div>
       </div>
     </section>
@@ -235,26 +240,26 @@ function CourseCard({ course, to }) {
   const progress = pct(course.done || 0, course.lessons || 0);
   const href = to || `/courses/${course.id}`;
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[14px] border border-border bg-white transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="relative h-48 overflow-hidden border-b border-border bg-canvas">
+    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white transition hover:border-teal/40 hover:shadow-sm">
+      <div className="relative h-40 overflow-hidden border-b border-border bg-canvas">
         <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80" alt="" className="h-full w-full object-cover" />
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-teal">{course.category || 'Healthcare'}</div>
-        <h3 className="mt-2 font-display text-xl font-semibold text-forest">{course.title}</h3>
-        <p className="mt-2 line-clamp-3 text-sm leading-6 text-body">{course.description}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted">
-          <span className="inline-flex items-center gap-1.5" title="Level"><Icon name="layers" className="h-4 w-4" />Beginner</span>
-          <span className="inline-flex items-center gap-1.5" title="Lessons"><Icon name="book" className="h-4 w-4" />{course.lessons ?? 0}</span>
-          <span className="inline-flex items-center gap-1.5" title="Duration"><Icon name="clock" className="h-4 w-4" />{fmt(course.minutes)}</span>
+        <div className={eyebrowCls}>{course.category || 'Healthcare'}</div>
+        <h3 className="mt-2 font-display text-base font-semibold leading-snug text-forest">{course.title}</h3>
+        <p className="mt-2 line-clamp-2 text-[13px] leading-6 text-body">{course.description}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
+          <span className="inline-flex items-center gap-1.5" title="Level"><Icon name="layers" className="h-3.5 w-3.5" />Beginner</span>
+          <span className="inline-flex items-center gap-1.5" title="Lessons"><Icon name="book" className="h-3.5 w-3.5" />{course.lessons ?? 0}</span>
+          <span className="inline-flex items-center gap-1.5" title="Duration"><Icon name="clock" className="h-3.5 w-3.5" />{fmt(course.minutes)}</span>
         </div>
         {course.done > 0 && (
           <div className="mt-4">
-            <div className="mb-1 flex justify-between text-xs text-muted"><span>{course.passed ? 'Completed' : 'Progress'}</span><span>{course.passed ? '100%' : `${progress}%`}</span></div>
-            <div className="h-2 overflow-hidden rounded-full bg-canvas"><div className="h-full rounded-full bg-teal" style={{ width: `${course.passed ? 100 : progress}%` }} /></div>
+            <div className="mb-1.5 flex justify-between text-[11px] font-medium text-muted"><span>{course.passed ? 'Completed' : 'Progress'}</span><span>{course.passed ? '100%' : `${progress}%`}</span></div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-canvas"><div className="h-full rounded-full bg-teal" style={{ width: `${course.passed ? 100 : progress}%` }} /></div>
           </div>
         )}
-        <Link to={href} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-teal hover:text-[#145c51]">View Course <Icon name="arrow" className="h-4 w-4" /></Link>
+        <Link to={href} className="mt-auto pt-5 inline-flex items-center gap-1.5 text-sm font-medium text-teal transition group-hover:gap-2.5">View course <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
       </div>
     </article>
   );
@@ -266,55 +271,58 @@ function Landing() {
 
   return (
     <>
-      {/* Hero: background image, text left, light black gradient */}
-      <section className="relative isolate min-h-[520px] overflow-hidden bg-forest">
+      {/* Hero */}
+      <section className="relative isolate overflow-hidden bg-forest">
         <img src="/images/herobg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/35 to-black/10" />
-        <div className="relative mx-auto flex max-w-[1200px] items-center px-5 py-20 md:py-28 lg:px-10 lg:py-32">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/90 via-[#0B1F33]/65 to-[#0B1F33]/20" />
+        <div className="relative mx-auto flex max-w-[1200px] items-center px-5 py-16 md:py-24 lg:px-10 lg:py-28">
           <div className="max-w-xl">
-            <h1 className="font-display text-4xl font-extrabold leading-tight text-white md:text-5xl lg:text-[3.2rem]" style={{ color: '#FFFFFF' }}>Building knowledge.<br /><span className="text-orange">Strengthening</span> healthcare.</h1>
-            <p className="mt-5 text-base leading-7 text-white/85 md:text-lg">Access practical learning opportunities designed to help healthcare professionals develop their knowledge, strengthen their skills and support better healthcare delivery.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/courses" className={btn}>Explore Courses</Link>
-              <Link to="/about" className="inline-flex h-12 items-center justify-center rounded-xl border border-white/40 px-6 font-semibold text-white transition hover:bg-white/10">About Us</Link>
+            <p className={eyebrowOnDark}>Healthcare learning</p>
+            <h1 className="mt-3 font-display text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] sm:text-[2.6rem] lg:text-[3rem]" style={{ color: '#FFFFFF' }}>
+              Building knowledge.<br /><span className="text-orange">Strengthening</span> healthcare.
+            </h1>
+            <p className="mt-4 max-w-lg text-[15px] leading-7 text-white/80 md:text-base">Access practical learning opportunities designed to help healthcare professionals develop their knowledge, strengthen their skills and support better healthcare delivery.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/courses" className="inline-flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-teal transition hover:bg-mint">Explore courses</Link>
+              <Link to="/about" className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-sm font-semibold text-white transition hover:bg-white/10">About us</Link>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-white/90">
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] font-medium text-white/70">
               {[
                 { icon: 'clock', label: 'Flexible learning' },
                 { icon: 'book', label: 'Practical courses' },
                 { icon: 'award', label: 'Certificates of completion' },
               ].map(item => (
-                <li key={item.label} className="inline-flex items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-black"><Icon name={item.icon} className="h-4 w-4" /></span>{item.label}</li>
+                <li key={item.label} className="inline-flex items-center gap-2"><Icon name={item.icon} className="h-4 w-4 text-white/50" />{item.label}</li>
               ))}
             </ul>
           </div>
         </div>
       </section>
 
-      {/* Why ThanziLearn: image left, text right */}
+      {/* Why ThanziLearn */}
       <section className="bg-white">
-        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-16 md:py-24 lg:grid-cols-2 lg:px-10 lg:py-[100px]">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-14 md:py-20 lg:grid-cols-2 lg:gap-14 lg:px-10">
           <div className="relative">
-            <img src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80" alt="Healthcare professionals learning together" className="aspect-[4/3] w-full rounded-[14px] border border-border object-cover" />
-            <div className="absolute -bottom-4 -right-2 rounded-xl border border-border bg-white px-4 py-3 shadow-sm md:-right-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-forest"><span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-mint text-teal"><Icon name="book" className="h-4 w-4" /></span>Learn at your pace</div>
+            <img src="/images/why.jpg" alt="Healthcare professionals learning together" className="aspect-[4/3] w-full rounded-xl border border-border object-cover" />
+            <div className="absolute -bottom-3 -right-2 rounded-lg border border-border bg-white px-3.5 py-2.5 shadow-sm md:-right-4">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-forest"><span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-mint text-teal"><Icon name="book" className="h-3.5 w-3.5" /></span>Learn at your pace</div>
             </div>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Why ThanziLearn</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Learning that supports better care.</h2>
-            <p className="mt-4 max-w-xl text-base leading-7 text-body">Accessible, focused courses that help healthcare professionals grow their knowledge and skills.</p>
-            <ul className="mt-8 space-y-5">
+            <p className={eyebrowCls}>Why ThanziLearn</p>
+            <h2 className={`mt-2.5 ${h2Cls}`}>Learning that supports better care.</h2>
+            <p className={`mt-3 max-w-xl ${bodyCls}`}>Accessible, focused courses that help healthcare professionals grow their knowledge and skills.</p>
+            <ul className="mt-7 space-y-4">
               {[
-                { icon: 'device', title: 'Accessible Learning', desc: 'Learn anywhere on phone, tablet, or computer.' },
-                { icon: 'clock', title: 'Flexible Learning', desc: 'Short lessons that fit your schedule.' },
-                { icon: 'shield', title: 'Practical Knowledge', desc: 'Apply relevant topics and check your understanding.' },
+                { icon: 'device', title: 'Accessible learning', desc: 'Learn anywhere on phone, tablet, or computer.' },
+                { icon: 'clock', title: 'Flexible learning', desc: 'Short lessons that fit your schedule.' },
+                { icon: 'shield', title: 'Practical knowledge', desc: 'Apply relevant topics and check your understanding.' },
               ].map(item => (
-                <li key={item.title} className="flex gap-4">
-                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mint text-teal"><Icon name={item.icon} className="h-5 w-5" /></span>
+                <li key={item.title} className="flex gap-3.5">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-mint text-teal"><Icon name={item.icon} className="h-[18px] w-[18px]" /></span>
                   <div>
-                    <h3 className="font-display text-lg font-semibold text-forest">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-body">{item.desc}</p>
+                    <h3 className="font-display text-[15px] font-semibold text-forest">{item.title}</h3>
+                    <p className="mt-0.5 text-[13px] leading-6 text-body">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -324,19 +332,19 @@ function Landing() {
       </section>
 
       {/* Featured courses */}
-      <section className="bg-canvas">
-        <div className="mx-auto max-w-[1200px] px-5 py-16 md:py-24 lg:px-10 lg:py-[100px]">
+      <section className="border-y border-border bg-canvas">
+        <div className="mx-auto max-w-[1200px] px-5 py-14 md:py-20 lg:px-10">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Explore our courses</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Explore learning opportunities.</h2>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-body">Discover courses covering healthcare practice, patient safety, public health and emerging technologies.</p>
+              <p className={eyebrowCls}>Explore our courses</p>
+              <h2 className={`mt-2.5 ${h2Cls}`}>Explore learning opportunities.</h2>
+              <p className={`mt-2.5 max-w-2xl ${bodyCls}`}>Discover courses covering healthcare practice, patient safety, public health and emerging technologies.</p>
             </div>
-            <Link to="/courses" className="inline-flex items-center gap-2 text-sm font-semibold text-teal hover:text-[#0c3d68]">View All Courses <Icon name="arrow" className="h-4 w-4" /></Link>
+            <Link to="/courses" className="inline-flex items-center gap-1.5 text-sm font-medium text-teal hover:text-[#0c3d68]">View all courses <Icon name="arrow" className="h-4 w-4" /></Link>
           </div>
-          <div className="mt-10">
+          <div className="mt-8">
             {loading ? <Loading label="Loading courses…" /> : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {(featured.length ? featured : [
                   { id: 'sample-1', title: 'Infection Prevention Basics', description: 'Learn essential practices to reduce infection risks and improve patient safety.', category: 'Patient Safety', lessons: 6, minutes: 30 },
                   { id: 'sample-2', title: 'Safe Medication Administration', description: 'Build confidence in safe medication checks and administration practices.', category: 'Clinical Practice', lessons: 8, minutes: 40 },
@@ -348,67 +356,67 @@ function Landing() {
         </div>
       </section>
 
-      {/* Designed for practical learning - dark bg, minimal text, image with floating elements */}
+      {/* Designed for practical learning */}
       <section className="relative isolate overflow-hidden bg-forest">
         <img src="/images/Designedbg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-black/75" />
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-16 md:py-24 lg:grid-cols-2 lg:px-10 lg:py-[100px]">
+        <div className="absolute inset-0 bg-[#0B1F33]/85" />
+        <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-14 md:py-20 lg:grid-cols-2 lg:px-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange">Designed for practical learning</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold text-white md:text-4xl" style={{ color: '#FFFFFF' }}>More than just reading. An engaging <span className="text-orange">learning</span> experience.</h2>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/80">Clear, focused lessons help you learn, practise, and track your progress with confidence.</p>
-            <Link to="/courses" className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-teal px-6 font-semibold text-white transition hover:bg-[#0c3d68]">Explore courses <Icon name="arrow" className="h-4 w-4" /></Link>
+            <p className={eyebrowOnDark}>Designed for practical learning</p>
+            <h2 className="mt-2.5 font-display text-2xl font-semibold leading-[1.2] tracking-[-0.015em] md:text-[2rem]" style={{ color: '#FFFFFF' }}>More than just reading. An engaging learning experience.</h2>
+            <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/70">Clear, focused lessons help you learn, practise, and track your progress with confidence.</p>
+            <Link to="/courses" className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-teal transition hover:bg-mint">Explore courses <Icon name="arrow" className="h-4 w-4" /></Link>
           </div>
           <div className="relative mx-auto w-full max-w-lg">
-            <img src="/images/desgned.jpg" alt="Healthcare learning experience" className="aspect-[4/3] w-full rounded-[14px] object-cover" />
-            <div className="absolute -left-2 top-6 rounded-xl bg-white px-4 py-3 shadow-lg md:-left-6">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-mint text-teal"><Icon name="play" className="h-5 w-5" /></span>
-                <div><p className="text-xs text-muted">Lesson progress</p><p className="text-sm font-semibold text-forest">65% complete</p></div>
+            <img src="/images/desgned.jpg" alt="Healthcare learning experience" className="aspect-[4/3] w-full rounded-xl object-cover" />
+            <div className="absolute -left-2 top-5 rounded-lg bg-white px-3.5 py-2.5 shadow-lg md:-left-5">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-mint text-teal"><Icon name="play" className="h-4 w-4" /></span>
+                <div><p className="text-[11px] text-muted">Lesson progress</p><p className="text-[13px] font-semibold text-forest">65% complete</p></div>
               </div>
             </div>
-            <div className="absolute -bottom-4 -right-2 rounded-xl bg-white px-4 py-3 shadow-lg md:-right-6">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-orange/15 text-orange"><Icon name="award" className="h-5 w-5" /></span>
-                <div><p className="text-xs text-muted">On completion</p><p className="text-sm font-semibold text-forest">Earn a certificate</p></div>
+            <div className="absolute -bottom-3 -right-2 rounded-lg bg-white px-3.5 py-2.5 shadow-lg md:-right-5">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-orange/15 text-orange"><Icon name="award" className="h-4 w-4" /></span>
+                <div><p className="text-[11px] text-muted">On completion</p><p className="text-[13px] font-semibold text-forest">Earn a certificate</p></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Certificate / resume section (before CTA) */}
+      {/* Certificate */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-5 py-16 md:py-24 lg:px-10 lg:py-[100px]">
-          <div className="grid items-center gap-8 rounded-[14px] border border-border bg-canvas p-6 md:grid-cols-[1.1fr_0.9fr] md:p-10">
+        <div className="mx-auto max-w-[1200px] px-5 py-14 md:py-20 lg:px-10">
+          <div className="grid items-center gap-8 rounded-xl border border-border bg-canvas p-6 md:grid-cols-[1.1fr_0.9fr] md:p-10">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Show your achievement</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Earn a certificate you can add to your resume.</h2>
-              <p className="mt-4 max-w-xl text-base leading-7 text-body">Upon successful completion of a course, you’ll receive a certificate of completion to showcase your learning and professional development on your resume or profile.</p>
+              <p className={eyebrowCls}>Show your achievement</p>
+              <h2 className={`mt-2.5 ${h2Cls}`}>Earn a certificate you can add to your resume.</h2>
+              <p className={`mt-3 max-w-xl ${bodyCls}`}>Upon successful completion of a course, you’ll receive a certificate of completion to showcase your learning and professional development on your resume or profile.</p>
             </div>
-            <div className="rounded-[14px] border border-border bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-mint text-teal"><Icon name="award" className="h-7 w-7" /></div>
-              <p className="mt-4 font-display text-lg font-semibold text-forest">Certificate of Completion</p>
-              <p className="mt-1 text-sm text-muted">ThanziLearn</p>
-              <div className="mt-4 h-2 w-full rounded-full bg-canvas"><div className="h-2 w-3/4 rounded-full bg-orange" /></div>
-              <p className="mt-3 text-xs text-muted">Add it to your resume and professional profiles</p>
+            <div className="rounded-xl border border-border bg-white p-6 text-center shadow-sm">
+              <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-lg bg-mint text-teal"><Icon name="award" className="h-6 w-6" /></div>
+              <p className="mt-3.5 font-display text-base font-semibold text-forest">Certificate of Completion</p>
+              <p className="mt-0.5 text-[13px] text-muted">ThanziLearn</p>
+              <div className="mt-4 h-1.5 w-full rounded-full bg-canvas"><div className="h-1.5 w-3/4 rounded-full bg-teal/80" /></div>
+              <p className="mt-2.5 text-[11px] text-muted">Add it to your resume and professional profiles</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA - blue bg */}
+      {/* CTA */}
       <section className="bg-teal">
-        <div className="mx-auto max-w-[1200px] px-5 py-16 md:py-20 lg:px-10">
+        <div className="mx-auto max-w-[1200px] px-5 py-14 md:py-16 lg:px-10">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-2xl text-left">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mint">Your learning journey starts here</p>
-              <h2 className="mt-4 font-display text-3xl font-semibold text-white md:text-4xl" style={{ color: '#FFFFFF' }}>Invest in your knowledge. <span className="text-orange">Strengthen</span> your impact.</h2>
-              <p className="mt-4 text-base leading-7 text-white/85">Explore practical learning opportunities and take the next step in your professional development.</p>
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mint/80">Your learning journey starts here</p>
+              <h2 className="mt-2.5 font-display text-2xl font-semibold leading-[1.2] tracking-[-0.015em] md:text-[2rem]" style={{ color: '#FFFFFF' }}>Invest in your knowledge. Strengthen your impact.</h2>
+              <p className="mt-2.5 text-[15px] leading-7 text-white/75 md:text-base">Explore practical learning opportunities and take the next step in your professional development.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3 md:justify-end">
-              <Link to="/courses" className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 font-semibold text-teal transition hover:bg-mint">Explore Courses</Link>
-              <Link to="/contact" className="inline-flex h-12 items-center justify-center rounded-xl border border-white/40 px-8 font-semibold text-white transition hover:bg-white/10">Contact Us</Link>
+              <Link to="/courses" className="inline-flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-teal transition hover:bg-mint">Explore courses</Link>
+              <Link to="/contact" className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-sm font-semibold text-white transition hover:bg-white/10">Contact us</Link>
             </div>
           </div>
         </div>
@@ -430,15 +438,15 @@ function Catalogue() {
   });
   return (
     <>
-      <PageHero eyebrow="Courses" title={<>Explore <span className="text-orange">practical</span> courses.</>} text="Flexible, healthcare-focused training designed to strengthen your knowledge and support better care." image="/images/course.jpg" />
+      <PageHero eyebrow="Courses" title="Explore practical courses." text="Flexible, healthcare-focused training designed to strengthen your knowledge and support better care." image="/images/course.jpg" />
       <Wrap>
-        <div className="-mt-8 mb-8 grid gap-4 rounded-2xl border border-border bg-white p-4 shadow-md md:-mt-12 md:grid-cols-[1fr_220px]">
+        <div className="-mt-8 mb-8 grid gap-4 rounded-xl border border-border bg-white p-3.5 shadow-sm md:-mt-12 md:grid-cols-[1fr_220px]">
           <label className="block"><span className="sr-only">Search courses</span><div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40"><Icon name="search" className="h-4 w-4" /></span><input className={inp + ' pl-9'} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by title or keyword" /></div></label>
           <label className="block"><span className="sr-only">Filter by category</span><select className={inp} value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></label>
         </div>
         {loading ? <Loading label="Loading courses…" /> : error ? <StateBox title="Couldn’t load courses" text={error} action={<button className={btn} onClick={reload}>Try again</button>} /> : list.length === 0 ? (
           <StateBox title="No courses found" text={courses.length ? 'Try a different search or category.' : 'No courses have been published yet.'} action={courses.length ? <button className={btnSoft} onClick={() => { setQuery(''); setCategory(''); }}>Clear filters</button> : null} />
-        ) : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{list.map(c => <CourseCard key={c.id} course={c} />)}</div>}
+        ) : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{list.map(c => <CourseCard key={c.id} course={c} />)}</div>}
       </Wrap>
     </>
   );
@@ -463,48 +471,48 @@ function Preview() {
       <PageHero eyebrow={course.category || 'Course'} title={course.title} text={course.description} image="/images/course.jpg" />
       <Wrap>
       <div className={card + ' -mt-8 md:-mt-12 md:p-8'}>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink/70">
-          <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-4 w-4 text-lake" />{lessons.length} lessons</span>
-          <span className="inline-flex items-center gap-1.5"><Icon name="clock" className="h-4 w-4 text-lake" />About {fmt(total)}</span>
-          <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-lake" />Pass mark {course.pass_mark}%</span>
-          <span className="inline-flex items-center gap-1.5"><Icon name="shield" className="h-4 w-4 text-lake" />{course.questions} quiz questions</span>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-body">
+          <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-4 w-4 text-teal" />{lessons.length} lessons</span>
+          <span className="inline-flex items-center gap-1.5"><Icon name="clock" className="h-4 w-4 text-teal" />About {fmt(total)}</span>
+          <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-teal" />Pass mark {course.pass_mark}%</span>
+          <span className="inline-flex items-center gap-1.5"><Icon name="shield" className="h-4 w-4 text-teal" />{course.questions} quiz questions</span>
         </div>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-3">
           <Link to={startTo} className={btn}>{user ? 'Open course' : 'Create free account to start'} <Icon name="arrow" className="h-4 w-4" /></Link>
           {!user && <Link to="/login" className={btnSoft}>I have an account</Link>}
         </div>
       </div>
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
+        <div className="space-y-5">
           <section className={card}>
-            <h2 className="font-display text-2xl font-bold">What you will learn</h2>
+            <h2 className="font-display text-lg font-semibold text-forest">What you will learn</h2>
             {course.skills?.length ? (
-              <ul className="mt-4 space-y-2 pl-5 text-sm leading-7 text-ink/70">{course.skills.map(s => <li key={s} className="list-disc">{s}</li>)}</ul>
-            ) : <p className="mt-3 text-sm text-ink/70">Key concepts and practical steps are covered across the lessons and assessment.</p>}
+              <ul className="mt-3 space-y-1.5 pl-5 text-[13px] leading-6 text-body">{course.skills.map(s => <li key={s} className="list-disc">{s}</li>)}</ul>
+            ) : <p className="mt-2 text-[13px] leading-6 text-body">Key concepts and practical steps are covered across the lessons and assessment.</p>}
           </section>
           <section className={card}>
-            <h2 className="font-display text-2xl font-bold">Curriculum</h2>
-            <ol className="mt-4 space-y-3">
+            <h2 className="font-display text-lg font-semibold text-forest">Curriculum</h2>
+            <ol className="mt-4 space-y-2.5">
               {lessons.map((l, i) => (
-                <li key={l.id} className="flex items-center justify-between gap-4 rounded-xl border border-ink/10 bg-mist p-3">
-                  <div><div className="text-xs font-semibold uppercase tracking-[0.2em] text-ink/60">Lesson {i + 1}</div><div className="mt-1 font-semibold text-ink">{l.title}</div></div>
-                  <div className="text-sm text-ink/60">{l.duration_min} min</div>
+                <li key={l.id} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-canvas p-3">
+                  <div><div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Lesson {i + 1}</div><div className="mt-0.5 text-sm font-medium text-forest">{l.title}</div></div>
+                  <div className="text-[13px] text-muted">{l.duration_min} min</div>
                 </li>
               ))}
             </ol>
           </section>
         </div>
         <aside className={card + ' h-fit'}>
-          <div className="rounded-xl bg-gradient-to-br from-lake/10 to-mint p-5">
-            <div className="font-display text-lg font-bold text-ink">Course details</div>
-            <dl className="mt-4 space-y-3 text-sm text-ink/70">
-              <div className="flex justify-between gap-4"><dt>Lessons</dt><dd className="font-semibold text-ink">{lessons.length}</dd></div>
-              <div className="flex justify-between gap-4"><dt>Duration</dt><dd className="font-semibold text-ink">{fmt(total)}</dd></div>
-              <div className="flex justify-between gap-4"><dt>Assessment</dt><dd className="font-semibold text-ink">Final quiz</dd></div>
-              <div className="flex justify-between gap-4"><dt>Certificate</dt><dd className="font-semibold text-ink">On completion</dd></div>
+          <div className="rounded-lg bg-mint p-5">
+            <div className="font-display text-base font-semibold text-forest">Course details</div>
+            <dl className="mt-4 space-y-2.5 text-[13px] text-body">
+              <div className="flex justify-between gap-4"><dt>Lessons</dt><dd className="font-medium text-forest">{lessons.length}</dd></div>
+              <div className="flex justify-between gap-4"><dt>Duration</dt><dd className="font-medium text-forest">{fmt(total)}</dd></div>
+              <div className="flex justify-between gap-4"><dt>Assessment</dt><dd className="font-medium text-forest">Final quiz</dd></div>
+              <div className="flex justify-between gap-4"><dt>Certificate</dt><dd className="font-medium text-forest">On completion</dd></div>
             </dl>
           </div>
-          <p className="mt-4 text-xs leading-5 text-ink/60">Completion certificates are for learning records and are not a professional licence unless stated.</p>
+          <p className="mt-3.5 text-[11px] leading-5 text-muted">Completion certificates are for learning records and are not a professional licence unless stated.</p>
         </aside>
       </div>
       </Wrap>
@@ -515,17 +523,17 @@ function Preview() {
 function About() {
   return (
     <>
-      <PageHero eyebrow="About us" title={<>Making healthcare <span className="text-orange">learning</span> accessible.</>} text="Flexible, practical courses that support healthcare professionals and students to grow with confidence." image="/images/about.jpg" />
+      <PageHero eyebrow="About us" title="Making healthcare learning accessible." text="Flexible, practical courses that support healthcare professionals and students to grow with confidence." image="/images/about.jpg" />
 
       {/* Our Story */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-5 py-16 md:py-24 lg:px-10 lg:py-[100px]">
-          <div className="grid items-start gap-10 lg:grid-cols-2">
+        <div className="mx-auto max-w-[1200px] px-5 py-14 md:py-20 lg:px-10">
+          <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-14">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Our story</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Why ThanziLearn?</h2>
+              <p className={eyebrowCls}>Our story</p>
+              <h2 className={`mt-2.5 ${h2Cls}`}>Why ThanziLearn?</h2>
             </div>
-            <div className="space-y-4 text-base leading-7 text-body">
+            <div className="space-y-4 text-[15px] leading-7 text-body md:text-base">
               <p>Healthcare professionals and students need learning that is accessible, relevant, and easy to fit into busy schedules. Yet opportunities for continued education can be limited by time, distance, and resources.</p>
               <p>ThanziLearn was created to help bridge that gap by offering flexible healthcare education that supports continuous learning. Through focused courses and clear learning experiences, we aim to make it easier for learners to grow their knowledge and apply it in practice.</p>
             </div>
@@ -534,21 +542,21 @@ function About() {
       </section>
 
       {/* Learning Experience */}
-      <section className="bg-canvas">
-        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-16 md:py-24 lg:grid-cols-2 lg:px-10 lg:py-[100px]">
+      <section className="border-y border-border bg-canvas">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-14 md:py-20 lg:grid-cols-2 lg:gap-14 lg:px-10">
           <div>
-            <img src="/images/experience.jpg" alt="Healthcare learning experience" className="aspect-[4/3] w-full rounded-[14px] border border-border object-cover" />
+            <img src="/images/experience.jpg" alt="Healthcare learning experience" className="aspect-[4/3] w-full rounded-xl border border-border object-cover" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Learning experience</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">A clear and engaging way to learn.</h2>
-            <p className="mt-5 text-base leading-7 text-body">
+            <p className={eyebrowCls}>Learning experience</p>
+            <h2 className={`mt-2.5 ${h2Cls}`}>A clear and engaging way to learn.</h2>
+            <p className={`mt-3 ${bodyCls}`}>
               ThanziLearn offers focused courses with clear learning materials, knowledge checks, and progress tracking to support understanding at every step. Learners can move at their own pace and, upon successful completion, receive a certificate of completion to reflect their learning.
             </p>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
               {['Focused courses', 'Engaging materials', 'Knowledge checks', 'Progress & certificates'].map(item => (
-                <li key={item} className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3 text-sm font-medium text-forest">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-mint text-teal"><Icon name="check" className="h-4 w-4" /></span>
+                <li key={item} className="flex items-center gap-2.5 rounded-lg border border-border bg-white px-3.5 py-2.5 text-[13px] font-medium text-forest">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-mint text-teal"><Icon name="check" className="h-3.5 w-3.5" /></span>
                   {item}
                 </li>
               ))}
@@ -559,22 +567,22 @@ function About() {
 
       {/* Our Commitment to Quality */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-5 py-16 md:py-24 lg:px-10 lg:py-[100px]">
+        <div className="mx-auto max-w-[1200px] px-5 py-14 md:py-20 lg:px-10">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Our commitment to quality</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Responsible learning. <span className="text-orange">Meaningful</span> knowledge.</h2>
+            <p className={eyebrowCls}>Our commitment to quality</p>
+            <h2 className={`mt-2.5 ${h2Cls}`}>Responsible learning. Meaningful knowledge.</h2>
           </div>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { title: 'Clinical content review', desc: 'Content is reviewed for clarity and relevance to healthcare learning.' },
               { title: 'Clear learning objectives', desc: 'Each course has defined objectives so learners know what to expect.' },
               { title: 'Content accuracy', desc: 'We aim to keep information accurate, clear, and up to date.' },
               { title: 'Certificates and accreditation', desc: 'Completion certificates are not professional accreditation or a licence to practise unless stated.' },
             ].map(item => (
-              <div key={item.title} className="rounded-[14px] border border-border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-mint text-teal"><Icon name="shield" className="h-5 w-5" /></span>
-                <h3 className="mt-4 font-display text-lg font-semibold text-forest">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-body">{item.desc}</p>
+              <div key={item.title} className="rounded-xl border border-border bg-white p-5 transition hover:border-teal/40 hover:shadow-sm">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-mint text-teal"><Icon name="shield" className="h-[18px] w-[18px]" /></span>
+                <h3 className="mt-3.5 font-display text-[15px] font-semibold text-forest">{item.title}</h3>
+                <p className="mt-1.5 text-[13px] leading-6 text-body">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -583,10 +591,10 @@ function About() {
 
       {/* Final CTA */}
       <section className="bg-teal">
-        <div className="mx-auto max-w-[1200px] px-5 py-16 text-center md:py-20 lg:px-10">
-          <h2 className="font-display text-3xl font-semibold text-white md:text-4xl" style={{ color: '#FFFFFF' }}>Be part of a continuous <span className="text-orange">learning</span> journey.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/85">Explore courses designed to support your growth and strengthen healthcare knowledge.</p>
-          <Link to="/courses" className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 font-semibold text-teal transition hover:bg-mint">Explore Courses</Link>
+        <div className="mx-auto max-w-[1200px] px-5 py-14 text-center md:py-16 lg:px-10">
+          <h2 className="font-display text-2xl font-semibold leading-[1.2] tracking-[-0.015em] md:text-[2rem]" style={{ color: '#FFFFFF' }}>Be part of a continuous learning journey.</h2>
+          <p className="mx-auto mt-2.5 max-w-2xl text-[15px] leading-7 text-white/75 md:text-base">Explore courses designed to support your growth and strengthen healthcare knowledge.</p>
+          <Link to="/courses" className="mt-7 inline-flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-teal transition hover:bg-mint">Explore courses</Link>
         </div>
       </section>
     </>
@@ -603,17 +611,17 @@ function HowItWorks() {
   ];
   return (
     <>
-      <PageHero eyebrow="How it works" title={<>A simple path to <span className="text-orange">completion</span>.</>} text="From finding a course to earning your certificate, every step is clear and manageable." image="/images/why2.jpg" />
+      <PageHero eyebrow="How it works" title="A simple path to completion." text="From finding a course to earning your certificate, every step is clear and manageable." image="/images/why2.jpg" />
       <Wrap>
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {steps.map(({ icon, t, d }, i) => (
             <div key={t} className={card}>
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-mint font-display text-sm font-bold text-lake">{i + 1}</div>
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-lake/10 text-lake"><Icon name={icon} className="h-5 w-5" /></div>
+              <div className="mb-3.5 flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mint font-display text-xs font-semibold text-teal">{i + 1}</div>
+                <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-mint text-teal"><Icon name={icon} className="h-4 w-4" /></div>
               </div>
-              <h2 className="font-display text-xl font-bold">{t}</h2>
-              <p className="mt-2 text-sm leading-6 text-ink/70">{d}</p>
+              <h2 className="font-display text-base font-semibold text-forest">{t}</h2>
+              <p className="mt-1.5 text-[13px] leading-6 text-body">{d}</p>
             </div>
           ))}
         </div>
@@ -634,57 +642,57 @@ function ContactPage() {
   ];
   return (
     <>
-      <PageHero eyebrow="Contact" title={<>We’re here to <span className="text-orange">help</span>.</>} text="Questions about courses, accounts or using the platform? Send us a message and our team will respond." image="/images/contact.jpg" />
+      <PageHero eyebrow="Contact" title="We’re here to help." text="Questions about courses, accounts or using the platform? Send us a message and our team will respond." image="/images/contact.jpg" />
       <Wrap>
-        <div className="-mt-8 grid gap-6 md:-mt-12 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-[14px] border border-border bg-forest p-6 text-white shadow-sm md:p-8">
-            <div className="font-display text-2xl font-bold">Thanzi<span className="text-orange">Learn</span></div>
-            <p className="mt-3 text-sm leading-6 text-white/75">We usually reply within one working day. For urgent clinical matters, contact your local health authority or supervisor.</p>
-            <div className="mt-6 space-y-4 text-sm">
+        <div className="-mt-8 grid gap-5 md:-mt-12 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="rounded-xl bg-forest p-6 text-white md:p-8">
+            <div className="font-display text-xl font-semibold">Thanzi<span className="text-orange">Learn</span></div>
+            <p className="mt-2.5 text-[13px] leading-6 text-white/70">We usually reply within one working day. For urgent clinical matters, contact your local health authority or supervisor.</p>
+            <div className="mt-6 space-y-4 text-[13px]">
               <a href="mailto:hello@thanzilearn.org" className="flex items-start gap-3 text-white/85 transition hover:text-white">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mint"><Icon name="mail" className="h-4 w-4" /></span>
-                <span><span className="block text-[11px] uppercase tracking-[0.14em] text-white/50">Email</span>hello@thanzilearn.org</span>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10 text-mint"><Icon name="mail" className="h-4 w-4" /></span>
+                <span><span className="block text-[10px] uppercase tracking-[0.14em] text-white/45">Email</span>hello@thanzilearn.org</span>
               </a>
               <div className="flex items-start gap-3 text-white/85">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mint"><Icon name="clock" className="h-4 w-4" /></span>
-                <span><span className="block text-[11px] uppercase tracking-[0.14em] text-white/50">Support hours</span>Mon–Fri, 08:00–17:00</span>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10 text-mint"><Icon name="clock" className="h-4 w-4" /></span>
+                <span><span className="block text-[10px] uppercase tracking-[0.14em] text-white/45">Support hours</span>Mon–Fri, 08:00–17:00</span>
               </div>
               <div className="flex items-start gap-3 text-white/85">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mint"><Icon name="shield" className="h-4 w-4" /></span>
-                <span><span className="block text-[11px] uppercase tracking-[0.14em] text-white/50">Clinical support</span>For urgent clinical matters, contact your local health authority.</span>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10 text-mint"><Icon name="shield" className="h-4 w-4" /></span>
+                <span><span className="block text-[10px] uppercase tracking-[0.14em] text-white/45">Clinical support</span>For urgent clinical matters, contact your local health authority.</span>
               </div>
             </div>
           </div>
           <div className={card + ' md:p-8'}>
-            <h2 className="font-display text-2xl font-semibold text-forest">Send us a message</h2>
-            <p className="mt-2 text-sm leading-6 text-body">Fill in the form and we will get back to you by email.</p>
-            <form className="mt-6 space-y-4" onSubmit={e => { e.preventDefault(); setSent(true); }}>
+            <h2 className="font-display text-xl font-semibold text-forest">Send us a message</h2>
+            <p className="mt-1.5 text-[13px] leading-6 text-body">Fill in the form and we will get back to you by email.</p>
+            <form className="mt-5 space-y-4" onSubmit={e => { e.preventDefault(); setSent(true); }}>
               {sent && <Notice type="success">Thanks for your message. If email delivery isn’t configured in this environment, please contact us directly at hello@thanzilearn.org.</Notice>}
-              <div><label className="mb-1 block text-sm font-medium text-forest" htmlFor="contact-name">Name</label><input id="contact-name" className={inp} required placeholder="Your full name" /></div>
-              <div><label className="mb-1 block text-sm font-medium text-forest" htmlFor="contact-email">Email</label><input id="contact-email" className={inp} required type="email" placeholder="you@example.com" /></div>
-              <div><label className="mb-1 block text-sm font-medium text-forest" htmlFor="contact-message">Message</label><textarea id="contact-message" className={inp + ' min-h-32'} required placeholder="How can we help?" /></div>
+              <div><label className="mb-1 block text-[13px] font-medium text-forest" htmlFor="contact-name">Name</label><input id="contact-name" className={inp} required placeholder="Your full name" /></div>
+              <div><label className="mb-1 block text-[13px] font-medium text-forest" htmlFor="contact-email">Email</label><input id="contact-email" className={inp} required type="email" placeholder="you@example.com" /></div>
+              <div><label className="mb-1 block text-[13px] font-medium text-forest" htmlFor="contact-message">Message</label><textarea id="contact-message" className={inp + ' min-h-32'} required placeholder="How can we help?" /></div>
               <button className={btn} type="submit">Send message <Icon name="arrow" className="h-4 w-4" /></button>
             </form>
           </div>
         </div>
 
         {/* FAQs */}
-        <section className="mt-16 md:mt-20">
+        <section className="mt-14 md:mt-20">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">FAQs</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Frequently asked questions.</h2>
-            <p className="mt-3 text-base leading-7 text-body">Quick answers to common questions. Still need help? Send us a message above.</p>
+            <p className={eyebrowCls}>FAQs</p>
+            <h2 className={`mt-2.5 ${h2Cls}`}>Frequently asked questions.</h2>
+            <p className={`mt-2.5 ${bodyCls}`}>Quick answers to common questions. Still need help? Send us a message above.</p>
           </div>
-          <div className="mt-8 grid gap-3">
+          <div className="mt-7 grid gap-2.5">
             {faqs.map(f => (
-              <details key={f.q} className="group rounded-[14px] border border-border bg-white px-5 py-4 transition hover:border-teal/40 open:shadow-sm">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base font-semibold text-forest md:text-lg">
+              <details key={f.q} className="group rounded-xl border border-border bg-white px-5 py-4 transition hover:border-teal/40 open:shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-[15px] font-medium text-forest">
                   {f.q}
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mint text-teal transition group-open:bg-teal group-open:text-white">
-                    <Icon name="arrow" className="h-4 w-4 rotate-90 transition-transform group-open:-rotate-90" />
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mint text-teal transition group-open:bg-teal group-open:text-white">
+                    <Icon name="arrow" className="h-3.5 w-3.5 rotate-90 transition-transform group-open:-rotate-90" />
                   </span>
                 </summary>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-body md:text-[15px]">{f.a}</p>
+                <p className="mt-2.5 max-w-3xl text-[13px] leading-6 text-body">{f.a}</p>
               </details>
             ))}
           </div>
@@ -732,13 +740,13 @@ function AuthPage({ reg = false, admin = false }) {
         <img src="/images/why.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-          <Link to="/" className="font-display text-3xl font-extrabold" style={{ color: '#FFFFFF' }}>Thanzi<span className="text-orange">Learn</span></Link>
+          <Link to="/" className="font-display text-2xl font-semibold" style={{ color: '#FFFFFF' }}>Thanzi<span className="text-orange">Learn</span></Link>
           <div>
-            <h1 className="max-w-md font-display text-4xl font-bold leading-tight" style={{ color: '#FFFFFF' }}>{admin ? 'Manage courses and learners' : reg ? 'Start your learning journey' : 'Welcome back'}</h1>
-            <p className="mt-4 max-w-md text-base leading-7 text-white/85">Access practical courses, track progress, and earn completion certificates.</p>
+            <h1 className="max-w-md font-display text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em]" style={{ color: '#FFFFFF' }}>{admin ? 'Manage courses and learners' : reg ? 'Start your learning journey' : 'Welcome back'}</h1>
+            <p className="mt-3 max-w-md text-[15px] leading-7 text-white/80">Access practical courses, track progress, and earn completion certificates.</p>
           </div>
-          <div className="max-w-md rounded-[14px] border border-white/20 bg-black/30 p-5 backdrop-blur-sm">
-            <p className="text-sm leading-7 text-white/95">“{testimonials[slide].quote}”</p>
+          <div className="max-w-md rounded-xl border border-white/20 bg-black/25 p-5 backdrop-blur-sm">
+            <p className="text-[13px] leading-7 text-white/90">“{testimonials[slide].quote}”</p>
             <div className="mt-4">
               <p className="font-semibold text-white">{testimonials[slide].name}</p>
               <p className="text-xs text-white/75">{testimonials[slide].role}</p>
@@ -753,10 +761,10 @@ function AuthPage({ reg = false, admin = false }) {
       </div>
       <div className="flex items-center justify-center bg-white p-6 md:p-10">
         <form onSubmit={submit} className="w-full max-w-md">
-          <Link to="/" className="font-display text-xl font-extrabold text-forest md:hidden">Thanzi<span className="text-teal">Learn</span></Link>
-          <h2 className="mt-4 font-display text-3xl font-bold text-forest md:mt-0">{admin ? 'Admin sign in' : reg ? 'Create your account' : 'Sign in'}</h2>
-          <p className="mt-2 text-sm text-body">{reg ? 'Use your email to create a free learner account.' : 'Enter your email and password to continue.'}</p>
-          <div className="mt-8 space-y-5">
+          <Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-forest md:hidden">Thanzi<span className="text-teal">Learn</span></Link>
+          <h2 className="mt-4 font-display text-2xl font-semibold text-forest md:mt-0">{admin ? 'Admin sign in' : reg ? 'Create your account' : 'Sign in'}</h2>
+          <p className="mt-1.5 text-[13px] leading-6 text-body">{reg ? 'Use your email to create a free learner account.' : 'Enter your email and password to continue.'}</p>
+          <div className="mt-7 space-y-4">
             {reg && <div><label className="mb-1 block text-sm font-medium text-forest">Full name</label><input className={inp} required value={fields.name} onChange={e => setFields({ ...fields, name: e.target.value })} placeholder="Full name" autoComplete="name" /></div>}
             <div><label className="mb-1 block text-sm font-medium text-forest">Email address</label><input className={inp} required type="email" value={fields.email} onChange={e => setFields({ ...fields, email: e.target.value })} placeholder="you@example.com" autoComplete="email" /></div>
             <div><label className="mb-1 block text-sm font-medium text-forest">Password</label><input className={inp} required type="password" value={fields.password} onChange={e => setFields({ ...fields, password: e.target.value })} placeholder={reg ? 'At least 6 characters' : 'Password'} autoComplete={reg ? 'new-password' : 'current-password'} /></div>
@@ -772,14 +780,14 @@ function AuthPage({ reg = false, admin = false }) {
 
 function InfoPage({ title, text, backTo = '/login', backLabel = 'Back to sign in', embedded = false }) {
   const content = (
-    <div className="w-full max-w-lg rounded-[14px] border border-border bg-white p-6 shadow-sm md:p-8">
-      <Link to="/" className="font-display text-2xl font-bold text-forest">Thanzi<span className="text-teal">Learn</span></Link>
-      <h1 className="mt-5 font-display text-3xl font-semibold text-forest">{title}</h1>
-      <p className="mt-3 text-sm leading-7 text-body">{text}</p>
+    <div className="w-full max-w-lg rounded-xl border border-border bg-white p-6 shadow-sm md:p-8">
+      <Link to="/" className="font-display text-xl font-semibold tracking-[-0.02em] text-forest">Thanzi<span className="text-teal">Learn</span></Link>
+      <h1 className="mt-4 font-display text-2xl font-semibold text-forest">{title}</h1>
+      <p className="mt-2.5 text-[13px] leading-6 text-body">{text}</p>
       <div className="mt-6 flex flex-wrap gap-3"><Link to={backTo} className={btn}>{backLabel}</Link><Link to="/contact" className={btnSoft}>Contact support</Link></div>
     </div>
   );
-  if (embedded) return <div className="mx-auto max-w-[1200px] px-5 py-16 lg:px-10">{content}</div>;
+  if (embedded) return <div className="mx-auto max-w-[1200px] px-5 py-14 lg:px-10">{content}</div>;
   return <div className="flex min-h-screen items-center justify-center bg-canvas p-6">{content}</div>;
 }
 
@@ -797,31 +805,31 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
   return (
     <div className="min-h-screen bg-mist text-ink">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 flex-col border-r border-ink/10 bg-white p-5 lg:flex">
-          <Link to="/" className="font-display text-2xl font-extrabold">Thanzi<span className="text-lake">Learn</span></Link>
-          <div className="mt-8 flex items-center gap-3 rounded-2xl bg-mint p-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-lake font-display text-sm font-bold text-white">{initials(user?.name)}</div>
-            <div className="min-w-0"><div className="truncate font-semibold">{user?.name}</div><div className="text-xs text-ink/60">Learner account</div></div>
+        <aside className="hidden w-72 flex-col border-r border-border bg-white p-5 lg:flex">
+          <Link to="/" className="font-display text-xl font-semibold tracking-[-0.02em]">Thanzi<span className="text-lake">Learn</span></Link>
+          <div className="mt-7 flex items-center gap-3 rounded-xl bg-mint p-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-lake font-display text-xs font-semibold text-white">{initials(user?.name)}</div>
+            <div className="min-w-0"><div className="truncate text-sm font-medium">{user?.name}</div><div className="text-[11px] text-body">Learner account</div></div>
           </div>
-          <nav className="mt-8 space-y-2" aria-label="Learner">
+          <nav className="mt-7 space-y-1.5" aria-label="Learner">
             {links.map(([label, to]) => (
-              <NavLink key={to} end={to === '/learn'} to={to} className={({ isActive }) => `block rounded-xl px-3 py-2.5 text-sm font-medium ${isActive ? 'bg-lake text-white' : 'text-ink/70 hover:bg-mint hover:text-ink'}`}>{label}</NavLink>
+              <NavLink key={to} end={to === '/learn'} to={to} className={({ isActive }) => `block rounded-lg px-3 py-2 text-[13px] font-medium ${isActive ? 'bg-lake text-white' : 'text-body hover:bg-mint hover:text-forest'}`}>{label}</NavLink>
             ))}
           </nav>
           <div className="mt-auto pt-6"><button onClick={logout} className={btnSoft + ' w-full'}>Log out</button></div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="border-b border-ink/10 bg-white px-4 py-4 md:px-6">
+          <header className="border-b border-border bg-white px-4 py-3.5 md:px-6">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-3 lg:hidden"><Link to="/" className="font-display text-lg font-extrabold">Thanzi<span className="text-lake">Learn</span></Link></div>
-                <div className="mt-1 text-xs uppercase tracking-[0.2em] text-ink/60">{current}</div>
-                <h1 className="truncate font-display text-2xl font-bold">{title}</h1>
-                {subtitle && <p className="text-sm text-ink/70">{subtitle}</p>}
+                <div className="flex items-center gap-3 lg:hidden"><Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em]">Thanzi<span className="text-lake">Learn</span></Link></div>
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">{current}</div>
+                <h1 className="truncate font-display text-xl font-semibold">{title}</h1>
+                {subtitle && <p className="text-[13px] text-body">{subtitle}</p>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setOpen(v => !v)} className="rounded-xl border border-ink/15 px-3 py-2 text-sm font-semibold lg:hidden" aria-expanded={open} aria-controls="learner-nav">{open ? 'Close' : 'Menu'}</button>
-                <button onClick={logout} className="hidden rounded-xl border border-ink/15 px-3 py-2 text-sm font-semibold sm:inline-flex lg:hidden">Log out</button>
+                <button onClick={() => setOpen(v => !v)} className="rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium lg:hidden" aria-expanded={open} aria-controls="learner-nav">{open ? 'Close' : 'Menu'}</button>
+                <button onClick={logout} className="hidden rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium sm:inline-flex lg:hidden">Log out</button>
               </div>
             </div>
             {open && (
@@ -853,24 +861,24 @@ function LearnDashboard() {
       ) : (
         <>
           {next && (
-            <section className="rounded-3xl border border-ink/10 bg-mint p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lake">{next.done > 0 ? 'Continue learning' : 'Recommended to start'}</p>
+            <section className="rounded-xl border border-border bg-mint p-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-lake">{next.done > 0 ? 'Continue learning' : 'Recommended to start'}</p>
               <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h2 className="font-display text-3xl font-bold">{next.title}</h2>
-                  <p className="mt-2 text-sm text-ink/70">{next.done || 0} of {next.lessons} lessons complete · {fmt(next.minutes)}</p>
+                  <h2 className="font-display text-xl font-semibold">{next.title}</h2>
+                  <p className="mt-1.5 text-[13px] text-body">{next.done || 0} of {next.lessons} lessons complete · {fmt(next.minutes)}</p>
                 </div>
                 <Link to={`/learn/course/${next.id}`} className={btn}>{next.done > 0 ? 'Continue course' : 'Start course'}</Link>
               </div>
             </section>
           )}
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[['Courses available', courses.length], ['In progress', inProgress.length], ['Lessons completed', lessonsDone], ['Certificates earned', completed.length]].map(([label, value]) => (
-              <div key={label} className={card}><div className="font-display text-3xl font-bold">{value}</div><div className="mt-1 text-sm text-ink/70">{label}</div></div>
+              <div key={label} className={card}><div className="font-display text-2xl font-semibold">{value}</div><div className="mt-1 text-[13px] text-body">{label}</div></div>
             ))}
           </div>
-          <section className="mt-10">
-            <div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl font-bold">Your courses</h2><Link to="/learn/my-learning" className="text-sm font-semibold text-lake">View all</Link></div>
+          <section className="mt-9">
+            <div className="mb-4 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Your courses</h2><Link to="/learn/my-learning" className="text-[13px] font-medium text-lake hover:underline">View all</Link></div>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{courses.slice(0, 6).map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />)}</div>
           </section>
         </>
@@ -892,7 +900,7 @@ function LearnCoursesPage() {
   });
   return (
     <LearnerShell title="Explore courses" subtitle="Browse available courses and continue your learning." current="Explore courses">
-      <div className="mb-6 grid gap-4 rounded-2xl border border-ink/10 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px]">
+      <div className="mb-6 grid gap-4 rounded-xl border border-border bg-white p-3.5 shadow-sm md:grid-cols-[1fr_220px]">
         <input className={inp} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search courses" aria-label="Search courses" />
         <select className={inp} value={category} onChange={e => setCategory(e.target.value)} aria-label="Filter by category"><option value="">All categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
       </div>
@@ -910,9 +918,9 @@ function MyLearningPage() {
   const completed = courses.filter(c => c.passed);
   const Section = ({ title, items, empty }) => (
     <section className={card}>
-      <h2 className="font-display text-2xl font-bold">{title}</h2>
+      <h2 className="font-display text-lg font-semibold">{title}</h2>
       <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {items.length ? items.map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />) : <div className="rounded-2xl bg-mist p-5 text-sm text-ink/70 md:col-span-2 xl:col-span-3">{empty}</div>}
+        {items.length ? items.map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />) : <div className="rounded-lg bg-mist p-5 text-[13px] text-body md:col-span-2 xl:col-span-3">{empty}</div>}
       </div>
     </section>
   );
@@ -978,9 +986,9 @@ function CoursePage() {
     <Wrap>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lake">Course</p>
-          <h1 className="mt-1 font-display text-3xl font-bold">{course.title}</h1>
-          <p className="mt-1 text-sm text-ink/70">{lessons.length} lessons · Pass mark {course.pass_mark}%</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Course</p>
+          <h1 className="mt-1 font-display text-2xl font-semibold">{course.title}</h1>
+          <p className="mt-1 text-[13px] text-body">{lessons.length} lessons · Pass mark {course.pass_mark}%</p>
         </div>
         <Link to="/learn/my-learning" className={btnSoft}>Back to my learning</Link>
       </div>
@@ -993,21 +1001,21 @@ function CoursePage() {
         <aside className={card + ' h-fit space-y-2 lg:sticky lg:top-24'}>
           <div className="mb-2 font-semibold text-ink">Lessons</div>
           {lessons.map((l, n) => (
-            <button key={l.id} onClick={() => { setIdx(n); setResult(null); }} className={`w-full rounded-xl px-3 py-2 text-left text-sm transition ${n === idx ? 'bg-lake text-white' : 'bg-mist text-ink/75 hover:bg-mint hover:text-ink'}`}>
+            <button key={l.id} onClick={() => { setIdx(n); setResult(null); }} className={`w-full rounded-lg px-3 py-2 text-left text-[13px] transition ${n === idx ? 'bg-lake text-white' : 'bg-mist text-body hover:bg-mint hover:text-forest'}`}>
               <span className="mr-2 inline-block w-4">{done.includes(l.id) ? '✓' : n + 1 + '.'}</span>{l.title}
             </button>
           ))}
-          <button disabled={!allDone} onClick={() => { setIdx(-1); setError(''); }} className={`w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${inQuiz ? 'bg-lake text-white' : 'bg-mist text-ink/75 hover:bg-mint hover:text-ink'}`}>Final assessment</button>
-          {!allDone && <p className="pt-1 text-xs text-ink/60">Complete all lessons to unlock the assessment.</p>}
+          <button disabled={!allDone} onClick={() => { setIdx(-1); setError(''); }} className={`w-full rounded-lg px-3 py-2 text-left text-[13px] transition disabled:cursor-not-allowed disabled:opacity-50 ${inQuiz ? 'bg-lake text-white' : 'bg-mist text-body hover:bg-mint hover:text-forest'}`}>Final assessment</button>
+          {!allDone && <p className="pt-1 text-[11px] text-muted">Complete all lessons to unlock the assessment.</p>}
         </aside>
         <section className={card + ' md:p-8'}>
           {!inQuiz ? (
             lesson ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lake">Lesson {idx + 1} of {lessons.length} · {lesson.duration_min || 5} min</p>
-                <h2 className="mt-2 font-display text-3xl font-bold">{lesson.title}</h2>
-                {lesson.video_url && <div className="mt-5 overflow-hidden rounded-2xl border border-ink/10"><iframe src={lesson.video_url} className="aspect-video w-full" allowFullScreen title={lesson.title} /></div>}
-                <div className="mt-5 whitespace-pre-line text-base leading-8 text-ink/75">{lesson.body || 'Lesson content will appear here.'}</div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Lesson {idx + 1} of {lessons.length} · {lesson.duration_min || 5} min</p>
+                <h2 className="mt-1.5 font-display text-2xl font-semibold">{lesson.title}</h2>
+                {lesson.video_url && <div className="mt-5 overflow-hidden rounded-xl border border-border"><iframe src={lesson.video_url} className="aspect-video w-full" allowFullScreen title={lesson.title} /></div>}
+                <div className="mt-5 whitespace-pre-line text-[15px] leading-8 text-body">{lesson.body || 'Lesson content will appear here.'}</div>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <button onClick={() => setIdx(Math.max(0, idx - 1))} disabled={idx === 0} className={btnSoft + ' disabled:opacity-50'}>Previous</button>
                   <button onClick={complete} disabled={busy} className={btn}>{busy ? 'Saving…' : done.includes(lesson.id) ? (idx < lessons.length - 1 ? 'Next lesson' : 'Go to assessment') : 'Mark complete & continue'}</button>
@@ -1016,14 +1024,14 @@ function CoursePage() {
             ) : <StateBox title="No lessons yet" text="This course doesn’t have any lessons." />
           ) : (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lake">Final assessment</p>
-              <h2 className="mt-2 font-display text-3xl font-bold">Check your understanding</h2>
-              <p className="mt-2 text-sm text-ink/70">Answer all {course.questions.length} questions. You need {course.pass_mark}% to pass.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Final assessment</p>
+              <h2 className="mt-1.5 font-display text-2xl font-semibold">Check your understanding</h2>
+              <p className="mt-2 text-[13px] text-body">Answer all {course.questions.length} questions. You need {course.pass_mark}% to pass.</p>
               {result ? (
-                <div className={`mt-6 rounded-2xl p-6 ${result.passed ? 'bg-mint' : 'bg-[#fff3da]'}`}>
-                  <div className="font-display text-2xl font-bold">{result.passed ? 'You passed' : 'Not passed yet'}</div>
-                  <div className="mt-2 font-display text-5xl font-extrabold text-lake">{result.score}%</div>
-                  <p className="mt-2 text-sm text-ink/80">{result.correct} of {result.total} correct · Pass mark {result.pass_mark}%</p>
+                <div className={`mt-6 rounded-xl p-6 ${result.passed ? 'bg-mint' : 'bg-[#fff7e8]'}`}>
+                  <div className="font-display text-lg font-semibold">{result.passed ? 'You passed' : 'Not passed yet'}</div>
+                  <div className="mt-1 font-display text-4xl font-semibold text-lake">{result.score}%</div>
+                  <p className="mt-2 text-[13px] text-body">{result.correct} of {result.total} correct · Pass mark {result.pass_mark}%</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     {result.passed ? <Link to={`/learn/certificates/${id}`} className={btn}>View certificate</Link> : <button onClick={() => { setResult(null); setAnswers([]); setIdx(0); setError(''); }} className={btn}>Review lessons & try again</button>}
                     <Link to="/learn/my-learning" className={btnSoft}>Back to my learning</Link>
@@ -1033,11 +1041,11 @@ function CoursePage() {
                 <>
                   <div className="mt-6 space-y-5">
                     {course.questions.map((q, n) => (
-                      <fieldset key={n} className="rounded-2xl border border-ink/10 bg-mist p-4">
-                        <legend className="mb-3 px-1 text-sm font-semibold text-ink">{n + 1}. {q.q}</legend>
+                      <fieldset key={n} className="rounded-xl border border-border bg-mist p-4">
+                        <legend className="mb-3 px-1 text-[13px] font-medium text-forest">{n + 1}. {q.q}</legend>
                         <div className="space-y-2">
                           {q.options.map((opt, k) => (
-                            <label key={k} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm ${answers[n] === k ? 'border-lake bg-white text-ink' : 'border-ink/10 bg-white/70 text-ink/75 hover:border-lake/40'}`}>
+                            <label key={k} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[13px] ${answers[n] === k ? 'border-lake bg-white text-forest' : 'border-border bg-white/70 text-body hover:border-lake/40'}`}>
                               <input type="radio" name={`q-${n}`} checked={answers[n] === k} onChange={() => { const next = [...answers]; next[n] = k; setAnswers(next); }} />
                               <span>{opt}</span>
                             </label>
@@ -1052,7 +1060,7 @@ function CoursePage() {
                   </div>
                 </>
               )}
-              {passed && !result?.passed && <p className="mt-4 text-sm text-ink/70">You have already passed this course. <Link to={`/learn/certificates/${id}`} className="font-semibold text-lake hover:underline">View your certificate</Link>.</p>}
+              {passed && !result?.passed && <p className="mt-4 text-[13px] text-body">You have already passed this course. <Link to={`/learn/certificates/${id}`} className="font-medium text-lake hover:underline">View your certificate</Link>.</p>}
             </>
           )}
         </section>
@@ -1072,9 +1080,9 @@ function CertificatesPage() {
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {earned.map(c => (
             <div key={c.id} className={card}>
-              <div className="rounded-xl bg-mint p-4 text-center font-display text-lg font-bold text-lake">Certificate earned</div>
-              <h3 className="mt-4 font-display text-xl font-bold">{c.title}</h3>
-              <p className="mt-2 text-sm text-ink/70">Course completed with a passing assessment.</p>
+              <div className="rounded-lg bg-mint p-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-lake">Certificate earned</div>
+              <h3 className="mt-3.5 font-display text-base font-semibold">{c.title}</h3>
+              <p className="mt-1.5 text-[13px] leading-6 text-body">Course completed with a passing assessment.</p>
               <Link to={`/learn/certificates/${c.id}`} className={btn + ' mt-5 w-full'}>View certificate</Link>
             </div>
           ))}
@@ -1098,16 +1106,16 @@ function CertificateViewPage() {
   return (
     <LearnerShell title="Certificate of completion" subtitle={d.course.title} current="Certificates">
       <div className="mx-auto max-w-4xl">
-        <div className="rounded-[2rem] border border-ink/10 bg-white p-4 shadow-sm print:border-0 print:p-0 print:shadow-none">
-          <div className="rounded-[1.5rem] border-4 border-lake bg-[#f7faf8] p-8 text-center md:p-12">
-            <div className="font-display text-3xl font-extrabold">Thanzi<span className="text-lake">Learn</span></div>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-ink/60">Certificate of completion</p>
-            <p className="mt-8 text-lg text-ink/70">This certifies that</p>
-            <h2 className="mt-3 font-display text-4xl font-bold text-ink">{user?.name}</h2>
-            <p className="mt-3 text-lg text-ink/70">has successfully completed</p>
-            <h3 className="mt-4 font-display text-3xl font-bold text-lake">{d.course.title}</h3>
-            <p className="mt-6 text-sm text-ink/70">Issued on {today}</p>
-            <p className="mt-6 text-xs text-ink/60">This certificate records course completion and is not a professional licence unless stated by the provider.</p>
+        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm print:border-0 print:p-0 print:shadow-none">
+          <div className="rounded-xl border-4 border-lake bg-white p-8 text-center md:p-12">
+            <div className="font-display text-2xl font-semibold">Thanzi<span className="text-lake">Learn</span></div>
+            <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-muted">Certificate of completion</p>
+            <p className="mt-8 text-base text-body">This certifies that</p>
+            <h2 className="mt-2 font-display text-3xl font-semibold">{user?.name}</h2>
+            <p className="mt-2 text-base text-body">has successfully completed</p>
+            <h3 className="mt-3 font-display text-2xl font-semibold text-lake">{d.course.title}</h3>
+            <p className="mt-6 text-[13px] text-body">Issued on {today}</p>
+            <p className="mt-6 text-[11px] leading-5 text-muted">This certificate records course completion and is not a professional licence unless stated by the provider.</p>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-3 print:hidden">
@@ -1143,7 +1151,7 @@ function AdminGate({ children }) {
   if (user.role !== 'admin') {
     return (
       <div className="grid min-h-screen place-items-center bg-mist p-6">
-        <div className={card + ' max-w-md text-center'}><h1 className="font-display text-2xl font-bold">Admin access required</h1><p className="mt-2 text-sm text-ink/70">This account does not have permission to view the admin area.</p><div className="mt-5 flex justify-center gap-3"><Link to="/learn" className={btnSoft}>Go to dashboard</Link><button onClick={logout} className={btn}>Log out</button></div></div>
+        <div className={card + ' max-w-md text-center'}><h1 className="font-display text-xl font-semibold">Admin access required</h1><p className="mt-2 text-[13px] text-body">This account does not have permission to view the admin area.</p><div className="mt-5 flex justify-center gap-3"><Link to="/learn" className={btnSoft}>Go to dashboard</Link><button onClick={logout} className={btn}>Log out</button></div></div>
       </div>
     );
   }
@@ -1152,7 +1160,7 @@ function AdminGate({ children }) {
     <div className="min-h-screen bg-mist">
       <header className="bg-ink text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3 md:px-6">
-          <Link to="/admin" className="font-display text-xl font-bold">Thanzi<span className="text-sun">Learn</span> <span className="text-sm font-semibold text-white/70">Admin</span></Link>
+          <Link to="/admin" className="font-display text-lg font-semibold">Thanzi<span className="text-sun">Learn</span> <span className="text-[13px] font-medium text-white/60">Admin</span></Link>
           <nav className="flex flex-1 flex-wrap gap-4">
             <NavLink end to="/admin" className={link}>Dashboard</NavLink>
             <NavLink to="/admin/courses" className={link}>Courses</NavLink>
@@ -1178,16 +1186,16 @@ function Progress() {
   const groups = Object.values(by);
   return (
     <>
-      <h1 className="mb-2 font-display text-3xl font-bold">Learner progress</h1>
-      <p className="mb-6 text-sm text-ink/70">Progress across all learners and courses.</p>
+      <h1 className="mb-1.5 font-display text-2xl font-semibold">Learner progress</h1>
+      <p className="mb-6 text-[13px] text-body">Progress across all learners and courses.</p>
       {!groups.length ? <StateBox title="No learner progress yet" text="Progress will appear here once learners start courses." /> : (
         <div className="space-y-4">
           {groups.map(g => (
             <section key={g.email} className={card}>
-              <h2 className="font-display text-lg font-bold">{g.name} <span className="text-sm font-normal text-ink/60">{g.email}</span></h2>
+              <h2 className="font-display text-base font-semibold">{g.name} <span className="text-[13px] font-normal text-muted">{g.email}</span></h2>
               <div className="mt-3 overflow-x-auto">
-                <table className="w-full text-sm"><thead><tr className="text-left text-ink/60"><th className="py-2 pr-3">Course</th><th className="py-2 pr-3">Lessons</th><th className="py-2">Status</th></tr></thead>
-                  <tbody>{g.rows.map(x => (<tr key={x.course_id} className="border-t border-ink/10"><td className="py-2 pr-3">{x.title}</td><td className="py-2 pr-3">{x.done}/{x.total}</td><td className="py-2"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${x.passed ? 'bg-mint text-lake' : x.done > 0 ? 'bg-[#fff3da] text-ink' : 'bg-mist text-ink/60'}`}>{x.passed ? 'Passed' : x.done > 0 ? 'In progress' : 'Not started'}</span></td></tr>))}</tbody>
+                <table className="w-full text-[13px]"><thead><tr className="text-left text-muted"><th className="py-2 pr-3 font-medium">Course</th><th className="py-2 pr-3 font-medium">Lessons</th><th className="py-2 font-medium">Status</th></tr></thead>
+                  <tbody>{g.rows.map(x => (<tr key={x.course_id} className="border-t border-border"><td className="py-2 pr-3">{x.title}</td><td className="py-2 pr-3">{x.done}/{x.total}</td><td className="py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${x.passed ? 'bg-mint text-lake' : x.done > 0 ? 'bg-[#fff7e8] text-forest' : 'bg-mist text-muted'}`}>{x.passed ? 'Passed' : x.done > 0 ? 'In progress' : 'Not started'}</span></td></tr>))}</tbody>
                 </table>
               </div>
             </section>
