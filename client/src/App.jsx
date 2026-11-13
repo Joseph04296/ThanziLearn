@@ -425,7 +425,7 @@ function PageHero({ eyebrow, title, text, image = '/images/herobg1.jpg' }) {
   return (
     <section className="relative isolate h-[360px] overflow-hidden bg-forest sm:h-[400px] lg:h-[440px]">
       <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/90 via-[#0B1F33]/65 to-[#0B1F33]/20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/80 via-[#0B1F33]/50 to-[#0B1F33]/10" />
       <div className="relative mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-5 lg:px-10">
         <div className="max-w-2xl">
           {eyebrow && <p className={`mb-3 ${eyebrowOnDark}`}>{eyebrow}</p>}
@@ -482,7 +482,7 @@ function Landing() {
       {/* Hero */}
       <section className="relative isolate overflow-hidden bg-forest">
         <img src="/images/herobg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/90 via-[#0B1F33]/65 to-[#0B1F33]/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/80 via-[#0B1F33]/50 to-[#0B1F33]/10" />
         <div className="relative mx-auto flex max-w-[1200px] items-center px-5 py-14 md:py-20 lg:px-10 lg:py-24">
           <div className="max-w-lg">
             <p className={eyebrowOnDark}>Healthcare learning</p>
@@ -729,7 +729,7 @@ function Preview() {
   return (
     <>
       {/* Compact course header: no image, no full-height hero */}
-      <section className="border-b border-border bg-teal">
+      <section className="border-b border-border bg-[#0B1F33]">
         <div className="mx-auto max-w-[1200px] px-4 py-9 sm:px-5 md:py-12 lg:px-10">
           <nav className="flex items-center gap-2 text-[12px] text-white/60" aria-label="Breadcrumb">
             <Link to="/courses" className="transition hover:text-white">Courses</Link>
@@ -773,7 +773,7 @@ function Preview() {
             </section>
 
             <section className={darkCard}>
-              <h2 className="font-display text-xl font-semibold text-white">What you will learn</h2>
+              <h2 className="font-display text-xl font-semibold" style={{ color: '#FFFFFF' }}>What you will learn</h2>
               <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
                 {(course.skills?.length ? course.skills : [
                   'Key concepts explained in plain language',
