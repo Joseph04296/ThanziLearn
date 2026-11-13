@@ -6,10 +6,10 @@
   --font-sans: "Inter", sans-serif;
 
   /* Brand */
-  --color-teal: #0F4C81;
-  --color-lake: #0F4C81;
-  --color-blue: #0F4C81;
-  --color-mint: #EEF4FB;
+  --color-teal: #1565D8;
+  --color-lake: #1565D8;
+  --color-blue: #1565D8;
+  --color-mint: #EAF1FC;
 
   /* Neutrals: neutral greys read more professional than green-tinted ones */
   --color-forest: #212121;
@@ -55,7 +55,7 @@ select:focus-visible,
 a:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-  outline: 2px solid #0F4C81;
+  outline: 2px solid #1565D8;
   outline-offset: 2px;
 }
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminCourses, CourseEditor, Dashboard, Users } from './Admin.jsx';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -8,10 +8,11 @@ const Ctx = createContext(null);
 const useAuth = () => useContext(Ctx);
 
 const inp = 'h-11 w-full rounded-lg border border-border bg-white px-3.5 text-sm text-forest placeholder:text-muted/80 transition focus:border-teal';
-const btn = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-teal px-5 text-sm font-semibold text-white transition hover:bg-[#0c3d68] disabled:cursor-not-allowed disabled:opacity-60';
+const btn = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-teal px-5 text-sm font-semibold text-white transition hover:bg-[#0F52B5] disabled:cursor-not-allowed disabled:opacity-60';
 const btnOutline = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
 const btnSoft = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-white px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
-const card = 'rounded-xl border border-border bg-white p-6';
+const card = 'min-w-0 rounded-xl border border-border bg-white p-5 sm:p-6';
+const blueCard = 'min-w-0 rounded-xl bg-teal p-5 sm:p-6';
 
 // Shared type scale: one eyebrow, one heading hierarchy and one body size across pages.
 const eyebrowCls = 'text-[11px] font-semibold uppercase tracking-[0.14em] text-teal';
@@ -39,6 +40,9 @@ const Icon = ({ name, className = 'h-5 w-5' }) => {
   if (name === 'menu') return <svg {...p}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   if (name === 'x') return <svg {...p}><path d="M6 6l12 12M18 6 6 18"/></svg>;
   if (name === 'layers') return <svg {...p}><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg>;
+  if (name === 'globe') return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>;
+  if (name === 'bell') return <svg {...p}><path d="M18 8a6 6 0 1 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>;
+  if (name === 'chevron') return <svg {...p}><path d="m6 9 6 6 6-6"/></svg>;
   return <svg {...p}><circle cx="12" cy="12" r="9"/></svg>;
 };
 
@@ -210,73 +214,168 @@ function Notice({ type = 'info', children }) {
 
 function Site({ children }) {
   const { user, logout } = useAuth();
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
-  useEffect(() => setOpen(false), [location.pathname]);
-  const nav = [
-    { to: '/', label: 'Home' },
-    { to: '/courses', label: 'Courses' },
-    { to: '/about', label: 'About' },
-    { to: '/contact', label: 'Contact' },
-  ];
+  const [open, setOpen] = useState(false);
+  const [explore, setExplore] = useState(false);
+  const [lang, setLang] = useState(false);
+  const [notes, setNotes] = useState(false);
+  const [profile, setProfile] = useState(false);
+  const [search, setSearch] = useState('');
+
+  // One place to close every menu when the page changes.
+  useEffect(() => {
+    setOpen(false); setExplore(false); setLang(false); setNotes(false); setProfile(false);
+  }, [location.pathname, location.search]);
+
+  const submitSearch = e => {
+    e.preventDefault();
+    const term = search.trim();
+    navigate(term ? `/courses?q=${encodeURIComponent(term)}` : '/courses');
+    setSearch('');
+    setOpen(false);
+  };
+
+  const exploreCourses = SAMPLE_COURSES.slice(0, 3);
+  const iconBtn = 'inline-flex h-9 w-9 items-center justify-center rounded-full text-body transition hover:bg-canvas hover:text-teal';
+  const menuItem = 'block rounded-lg px-3 py-2 text-[13px] text-body hover:bg-canvas hover:text-teal';
+
   return (
     <div className="min-h-screen bg-canvas text-body">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-forest">Skip to content</a>
       <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur print:hidden">
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-4 px-5 lg:px-10">
-          <Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-forest md:text-xl">
-            Thanzi<span className="text-teal">Learn</span>
-          </Link>
-          <nav className="hidden items-center gap-7 text-sm font-medium md:flex" aria-label="Primary">
-            {nav.map(item => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => isActive ? 'text-teal' : 'text-body hover:text-teal'}>{item.label}</NavLink>
-            ))}
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-2 px-4 sm:px-5 lg:px-10">
+          <Link to="/" className="shrink-0 font-display text-lg font-semibold tracking-[-0.02em] text-teal md:text-xl">ThanziLearn</Link>
+
+          {/* Left cluster: Explore + My learning + About */}
+          <nav className="ml-2 hidden items-center gap-0.5 lg:flex" aria-label="Primary">
+            <div className="relative">
+              <button type="button" onClick={() => { setExplore(v => !v); setProfile(false); }} aria-expanded={explore} aria-haspopup="true" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-[14px] text-body transition hover:bg-canvas hover:text-teal">
+                Explore <Icon name="chevron" className={`h-3.5 w-3.5 transition-transform ${explore ? 'rotate-180' : ''}`} />
+              </button>
+              {explore && (
+                <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-border bg-white p-2 shadow-lg">
+                  <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Popular courses</p>
+                  {exploreCourses.map(c => (
+                    <Link key={c.id} to={`/courses/${c.id}`} className="block rounded-lg px-3 py-2 transition hover:bg-canvas">
+                      <span className="block text-[13px] font-medium leading-5 text-forest">{c.title}</span>
+                      <span className="block text-[11px] text-muted">{c.category}</span>
+                    </Link>
+                  ))}
+                  <div className="mt-1 border-t border-border pt-1">
+                    <Link to="/courses" className="flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium text-teal transition hover:bg-mint">Browse all courses <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
+                  </div>
+                </div>
+              )}
+            </div>
+            {user && (
+              <NavLink to="/learn/my-learning" className={({ isActive }) => `rounded-lg px-2.5 py-2 text-[14px] transition ${isActive ? 'text-teal' : 'text-body hover:bg-canvas hover:text-teal'}`}>My learning</NavLink>
+            )}
+            <NavLink to="/about" className={({ isActive }) => `rounded-lg px-2.5 py-2 text-[14px] transition ${isActive ? 'text-teal' : 'text-body hover:bg-canvas hover:text-teal'}`}>About</NavLink>
           </nav>
-          <div className="hidden items-center gap-2 md:flex">
+
+          {/* Search stays next to the left cluster */}
+          <form onSubmit={submitSearch} className="ml-2 hidden min-w-0 flex-1 md:block" role="search">
+            <div className="relative w-full max-w-[320px]">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"><Icon name="search" className="h-4 w-4" /></span>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-9 w-full rounded-full border border-border bg-canvas pl-9 pr-3 text-[13px] text-forest placeholder:text-muted transition focus:border-teal focus:bg-white" />
+            </div>
+          </form>
+
+          {/* Right cluster */}
+          <div className="ml-auto flex items-center gap-0.5">
             {user ? (
               <>
-                <Link to={user.role === 'admin' ? '/admin' : '/learn'} className="px-3 text-sm font-semibold text-forest hover:text-teal">{user.role === 'admin' ? 'Admin' : 'My Learning'}</Link>
-                <button onClick={logout} className="inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium text-body hover:text-teal">Log out</button>
+                <div className="relative hidden sm:block">
+                  <button type="button" onClick={() => { setLang(v => !v); setNotes(false); setProfile(false); }} className={iconBtn} aria-label="Language" aria-expanded={lang}>
+                    <Icon name="globe" className="h-[18px] w-[18px]" />
+                  </button>
+                  {lang && (
+                    <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-xl border border-border bg-white p-2 shadow-lg">
+                      <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Language</p>
+                      <button type="button" className="flex w-full items-center justify-between rounded-lg bg-mint px-3 py-2 text-[13px] font-medium text-teal">English <Icon name="check" className="h-3.5 w-3.5" /></button>
+                    </div>
+                  )}
+                </div>
+                <div className="relative hidden sm:block">
+                  <button type="button" onClick={() => { setNotes(v => !v); setLang(false); setProfile(false); }} className={iconBtn} aria-label="Notifications" aria-expanded={notes}>
+                    <Icon name="bell" className="h-[18px] w-[18px]" />
+                    <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-orange" aria-hidden="true" />
+                  </button>
+                  {notes && (
+                    <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border bg-white p-4 shadow-lg">
+                      <p className="text-[13px] font-medium text-forest">Notifications</p>
+                      <p className="mt-1.5 text-[12px] leading-5 text-body">You’re all caught up. Course updates and reminders will appear here.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <button type="button" onClick={() => { setProfile(v => !v); setLang(false); setNotes(false); }} className="flex h-9 w-9 items-center justify-center rounded-full bg-mint text-[11px] font-semibold text-teal transition hover:bg-teal hover:text-white" aria-label="Account menu" aria-expanded={profile}>
+                    {initials(user.name)}
+                  </button>
+                  {profile && (
+                    <div className="absolute right-0 top-full z-50 mt-2 w-60 rounded-xl border border-border bg-white p-2 shadow-lg">
+                      <div className="px-3 py-2">
+                        <p className="truncate text-[13px] font-medium text-forest">{user.name}</p>
+                        <p className="text-[11px] text-muted">{user.role === 'admin' ? 'Administrator' : 'Learner account'}</p>
+                      </div>
+                      <div className="border-t border-border pt-1">
+                        <Link to={user.role === 'admin' ? '/admin' : '/learn'} className={menuItem}>{user.role === 'admin' ? 'Admin dashboard' : 'My learning'}</Link>
+                        {user.role !== 'admin' && <Link to="/learn/certificates" className={menuItem}>Certificates</Link>}
+                        <button type="button" onClick={logout} className="block w-full rounded-lg px-3 py-2 text-left text-[13px] text-body transition hover:bg-canvas hover:text-teal">Log out</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <>
-                <Link to="/login" className="inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium text-forest hover:text-teal">Sign In</Link>
-                <Link to="/register" className="inline-flex h-10 items-center justify-center rounded-lg bg-teal px-4 text-sm font-semibold text-white transition hover:bg-[#0c3d68]">Get Started</Link>
+                <Link to="/login" className="hidden h-9 items-center rounded-lg px-3 text-[14px] font-medium text-teal transition hover:bg-mint sm:inline-flex">Log in</Link>
+                <Link to="/register" className="hidden h-9 items-center rounded-lg border border-teal bg-transparent px-3.5 text-[13px] font-semibold text-teal transition hover:bg-mint sm:inline-flex">Get started</Link>
               </>
             )}
+            <button type="button" onClick={() => setOpen(v => !v)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-forest lg:hidden" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Close menu' : 'Open menu'}>
+              <Icon name={open ? 'x' : 'menu'} className="h-5 w-5" />
+            </button>
           </div>
-          <button onClick={() => setOpen(v => !v)} className="inline-flex items-center justify-center rounded-lg border border-border p-2 text-forest md:hidden" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Close menu' : 'Open menu'}>
-            <Icon name={open ? 'x' : 'menu'} className="h-5 w-5" />
-          </button>
         </div>
+
         {open && (
-          <div id="mobile-nav" className="border-t border-border bg-white px-5 py-4 md:hidden">
-            <nav className="flex flex-col gap-1 text-sm font-medium" aria-label="Mobile">
-              {nav.map(item => (
-                <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `rounded-lg px-3 py-2.5 ${isActive ? 'bg-mint text-teal' : 'text-forest hover:bg-canvas'}`}>{item.label}</NavLink>
+          <div id="mobile-nav" className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-border bg-white px-4 py-4 lg:hidden">
+            <form onSubmit={submitSearch} role="search" className="relative mb-3">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"><Icon name="search" className="h-4 w-4" /></span>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-10 w-full rounded-full border border-border bg-canvas pl-9 pr-3 text-[13px] text-forest placeholder:text-muted focus:border-teal focus:bg-white" />
+            </form>
+            <nav className="flex flex-col gap-0.5 text-[14px]" aria-label="Mobile">
+              <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Explore courses</p>
+              {exploreCourses.map(c => (
+                <Link key={c.id} to={`/courses/${c.id}`} className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">{c.title}</Link>
               ))}
+              <Link to="/courses" className="rounded-lg px-3 py-2 font-medium text-teal transition hover:bg-mint">Browse all courses</Link>
+              <div className="my-2 border-t border-border" />
+              {user && <Link to="/learn/my-learning" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">My learning</Link>}
+              <Link to="/about" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">About</Link>
+              <Link to="/contact" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">Contact</Link>
               {user ? (
                 <>
-                  <Link to={user.role === 'admin' ? '/admin' : '/learn'} className="rounded-lg px-3 py-2.5 text-forest hover:bg-canvas">{user.role === 'admin' ? 'Admin' : 'My Learning'}</Link>
-                  <button onClick={logout} className="rounded-lg px-3 py-2.5 text-left text-forest hover:bg-canvas">Log out</button>
+                  {user.role === 'admin' && <Link to="/admin" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">Admin dashboard</Link>}
+                  <button type="button" onClick={logout} className="rounded-lg px-3 py-2 text-left text-body transition hover:bg-canvas hover:text-forest">Log out</button>
                 </>
               ) : (
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <Link to="/login" className="inline-flex h-10 items-center justify-center rounded-lg border border-border text-sm font-medium text-forest">Sign In</Link>
-                  <Link to="/register" className="inline-flex h-10 items-center justify-center rounded-lg bg-teal text-sm font-semibold text-white">Get Started</Link>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Link to="/login" className="inline-flex h-10 items-center justify-center rounded-lg border border-teal text-sm font-medium text-teal">Log in</Link>
+                  <Link to="/register" className="inline-flex h-10 items-center justify-center rounded-lg border border-teal text-sm font-semibold text-teal">Get started</Link>
                 </div>
               )}
             </nav>
           </div>
         )}
       </header>
-      <main id="main" className="flex-1">{children}</main>
+      <main id="main" className="flex-1 overflow-x-clip">{children}</main>
       <footer className="bg-white print:hidden">
-        <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 md:grid-cols-2 lg:grid-cols-4 lg:px-10">
+        <div className="mx-auto grid max-w-[1200px] gap-8 px-4 py-12 sm:px-5 md:grid-cols-2 lg:grid-cols-4 lg:px-10">
           <div>
-            <Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-forest">
-              Thanzi<span className="text-teal">Learn</span>
-            </Link>
+            <Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-teal">ThanziLearn</Link>
             <p className="mt-3 max-w-xs text-sm leading-6 text-body">Learn. Grow. Strengthen Healthcare.</p>
           </div>
           <div>
@@ -290,29 +389,29 @@ function Site({ children }) {
           <div>
             <h3 className="text-sm font-semibold text-forest">Account</h3>
             <ul className="mt-3 space-y-2.5 text-sm text-body">
-              <li><Link to="/login" className="hover:text-teal">Sign In</Link></li>
-              <li><Link to="/register" className="hover:text-teal">Create Account</Link></li>
-              <li><Link to={user ? (user.role === 'admin' ? '/admin' : '/learn/my-learning') : '/login'} className="hover:text-teal">My Learning</Link></li>
+              <li><Link to="/login" className="hover:text-teal">Log in</Link></li>
+              <li><Link to="/register" className="hover:text-teal">Create account</Link></li>
+              <li><Link to={user ? (user.role === 'admin' ? '/admin' : '/learn/my-learning') : '/login'} className="hover:text-teal">My learning</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-sm font-semibold text-forest">Support</h3>
             <ul className="mt-3 space-y-2.5 text-sm text-body">
-              <li><Link to="/contact" className="hover:text-teal">Contact Us</Link></li>
-              <li><Link to="/privacy" className="hover:text-teal">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="hover:text-teal">Terms of Use</Link></li>
+              <li><Link to="/contact" className="hover:text-teal">Contact us</Link></li>
+              <li><Link to="/privacy" className="hover:text-teal">Privacy policy</Link></li>
+              <li><Link to="/terms" className="hover:text-teal">Terms of use</Link></li>
             </ul>
           </div>
         </div>
         <div className="border-t border-border">
-          <div className="mx-auto max-w-[1200px] px-5 py-4 text-[13px] text-muted lg:px-10">© 2026 ThanziLearn. All rights reserved.</div>
+          <div className="mx-auto max-w-[1200px] px-4 py-4 text-[13px] text-muted sm:px-5 lg:px-10">© 2026 ThanziLearn. All rights reserved.</div>
         </div>
       </footer>
     </div>
   );
 }
 
-function Wrap({ children }) { return <div className="mx-auto max-w-[1200px] px-5 py-12 md:py-16 lg:px-10">{children}</div>; }
+function Wrap({ children }) { return <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-5 md:py-16 lg:px-10">{children}</div>; }
 
 // Shared hero for every page except the home page. Fixed height, one text column
 // and one type scale so all inner pages feel part of the same family.
@@ -433,18 +532,15 @@ function Landing() {
             <p className={eyebrowCls}>Why ThanziLearn</p>
             <h2 className={`mt-2.5 ${h2Cls}`}>Learning that supports better care.</h2>
             <p className={`mt-3 max-w-xl ${bodyCls}`}>Accessible, focused courses that help healthcare professionals grow their knowledge and skills.</p>
-            <ul className="mt-7 space-y-4">
+            <ul className="mt-7 space-y-3.5">
               {[
-                { icon: 'device', title: 'Accessible learning', desc: 'Learn anywhere on phone, tablet, or computer.' },
-                { icon: 'clock', title: 'Flexible learning', desc: 'Short lessons that fit your schedule.' },
-                { icon: 'shield', title: 'Practical knowledge', desc: 'Apply relevant topics and check your understanding.' },
+                { icon: 'device', title: 'Accessible learning' },
+                { icon: 'clock', title: 'Flexible learning' },
+                { icon: 'shield', title: 'Practical knowledge' },
               ].map(item => (
-                <li key={item.title} className="flex gap-3.5">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-mint text-teal"><Icon name={item.icon} className="h-[18px] w-[18px]" /></span>
-                  <div>
-                    <h3 className="font-display text-[15px] font-semibold text-forest">{item.title}</h3>
-                    <p className="mt-0.5 text-[13px] leading-6 text-body">{item.desc}</p>
-                  </div>
+                <li key={item.title} className="flex items-center gap-3">
+                  <Icon name={item.icon} className="h-[18px] w-[18px] shrink-0 text-forest" />
+                  <h3 className="font-display text-[15px] font-medium text-forest">{item.title}</h3>
                 </li>
               ))}
             </ul>
@@ -461,7 +557,7 @@ function Landing() {
               <h2 className={`mt-2.5 ${h2Cls}`}>Explore learning opportunities.</h2>
               <p className={`mt-2.5 max-w-2xl ${bodyCls}`}>Discover courses covering healthcare practice, patient safety, public health and emerging technologies.</p>
             </div>
-            <Link to="/courses" className="inline-flex items-center gap-1.5 text-sm font-medium text-teal hover:text-[#0c3d68]">View all courses <Icon name="arrow" className="h-4 w-4" /></Link>
+            <Link to="/courses" className="inline-flex items-center gap-1.5 text-sm font-medium text-teal hover:text-[#0F52B5]">View all courses <Icon name="arrow" className="h-4 w-4" /></Link>
           </div>
           <div className="mt-8">
             {loading ? <Loading label="Loading courses…" /> : (
@@ -544,8 +640,10 @@ function Landing() {
 
 function Catalogue() {
   const { courses, loading, error, reload } = useCourses({ fallback: true });
-  const [query, setQuery] = useState('');
+  const [params] = useSearchParams();
+  const [query, setQuery] = useState(params.get('q') || '');
   const [category, setCategory] = useState('');
+  useEffect(() => { setQuery(params.get('q') || ''); }, [params]);
   const categories = [...new Set(courses.map(c => c.category).filter(Boolean))];
   const list = courses.filter(c => {
     const q = query.toLowerCase();
@@ -626,24 +724,24 @@ function Preview() {
     <>
       {/* Compact course header: no image, no full-height hero */}
       <section className="border-b border-border bg-teal">
-        <div className="mx-auto max-w-[1200px] px-5 py-9 md:py-12 lg:px-10">
+        <div className="mx-auto max-w-[1200px] px-4 py-9 sm:px-5 md:py-12 lg:px-10">
           <nav className="flex items-center gap-2 text-[12px] text-white/60" aria-label="Breadcrumb">
             <Link to="/courses" className="transition hover:text-white">Courses</Link>
             <span aria-hidden="true">/</span>
             <span className="text-white/80">{course.category || 'Healthcare'}</span>
           </nav>
-          <h1 className="mt-3 max-w-3xl font-display text-[1.65rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem] md:text-[2.25rem]" style={{ color: '#FFFFFF' }}>{course.title}</h1>
+          <h1 className="mt-3 max-w-3xl break-words font-display text-[1.65rem] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[2rem] md:text-[2.25rem]" style={{ color: '#FFFFFF' }}>{course.title}</h1>
           <p className="mt-2.5 max-w-2xl text-[14px] leading-6 text-white/75">{course.description}</p>
         </div>
       </section>
       <Wrap>
         {/* Quick facts, lifted over the header edge */}
         <div className={card + ' -mt-8 md:-mt-10'}>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-4">
             {facts.map(f => (
-              <div key={f.label} className="flex items-center gap-2.5">
+              <div key={f.label} className="flex min-w-0 items-center gap-2.5">
                 <Icon name={f.icon} className="h-4 w-4 shrink-0 text-forest" />
-                <div>
+                <div className="min-w-0">
                   <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted">{f.label}</div>
                   <div className="text-[13px] font-medium text-forest">{f.value}</div>
                 </div>
@@ -652,24 +750,24 @@ function Preview() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+        <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
           {/* Left: the course itself */}
-          <div className="space-y-5">
-            <section className={card}>
-              <p className={eyebrowCls}>About this course</p>
-              <h2 className="mt-2 font-display text-xl font-semibold text-forest">What this course covers</h2>
-              <div className="mt-3 space-y-3 text-[15px] leading-7 text-body">
+          <div className="min-w-0 space-y-5">
+            <section className={blueCard}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">About this course</p>
+              <h2 className="mt-2 font-display text-xl font-semibold text-white">What this course covers</h2>
+              <div className="mt-3 space-y-3 text-[15px] leading-7 text-white/85">
                 {about.map((p, i) => <p key={i}>{p}</p>)}
               </div>
-              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-4 text-[12px] text-muted">
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-white/20 pt-4 text-[12px] text-white/75">
                 <span className="inline-flex items-center gap-1.5"><Icon name="device" className="h-3.5 w-3.5" />Self-paced, on any device</span>
                 <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-3.5 w-3.5" />{lessons.length} short lessons</span>
                 <span className="inline-flex items-center gap-1.5"><Icon name="award" className="h-3.5 w-3.5" />Certificate on completion</span>
               </div>
             </section>
 
-            <section className={card}>
-              <h2 className="font-display text-xl font-semibold text-forest">What you will learn</h2>
+            <section className={blueCard}>
+              <h2 className="font-display text-xl font-semibold text-white">What you will learn</h2>
               <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
                 {(course.skills?.length ? course.skills : [
                   'Key concepts explained in plain language',
@@ -677,8 +775,8 @@ function Preview() {
                   'Knowledge checks to test understanding',
                   'A final assessment to confirm progress',
                 ]).map(s => (
-                  <li key={s} className="flex gap-2.5 text-[13px] leading-6 text-body">
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mint text-teal"><Icon name="check" className="h-3 w-3" /></span>
+                  <li key={s} className="flex gap-2.5 text-[13px] leading-6 text-white/90">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15 text-white"><Icon name="check" className="h-3 w-3" /></span>
                     {s}
                   </li>
                 ))}
@@ -712,8 +810,8 @@ function Preview() {
           </div>
 
           {/* Right: certificate blueprint, then the enrolment call to action */}
-          <aside className="space-y-4 lg:sticky lg:top-24">
-            <div className="overflow-hidden rounded-xl border border-border bg-white">
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-24">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-white">
               <div className="flex items-center justify-between gap-3 border-b border-border bg-canvas px-4 py-3">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Certificate preview</span>
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-teal"><Icon name="award" className="h-3.5 w-3.5" />On completion</span>
@@ -781,15 +879,18 @@ function About() {
 
       {/* Our Story */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-5 py-14 md:py-20 lg:px-10">
-          <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-14">
+        <div className="mx-auto max-w-[1200px] px-4 py-14 sm:px-5 md:py-20 lg:px-10">
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
             <div>
               <p className={eyebrowCls}>Our story</p>
               <h2 className={`mt-2.5 ${h2Cls}`}>Why ThanziLearn?</h2>
+              <div className="mt-4 space-y-4 text-[15px] leading-7 text-body md:text-base">
+                <p>Healthcare professionals and students need learning that is accessible, relevant, and easy to fit into busy schedules. Yet opportunities for continued education can be limited by time, distance, and resources.</p>
+                <p>ThanziLearn was created to help bridge that gap by offering flexible healthcare education that supports continuous learning. Through focused courses and clear learning experiences, we aim to make it easier for learners to grow their knowledge and apply it in practice.</p>
+              </div>
             </div>
-            <div className="space-y-4 text-[15px] leading-7 text-body md:text-base">
-              <p>Healthcare professionals and students need learning that is accessible, relevant, and easy to fit into busy schedules. Yet opportunities for continued education can be limited by time, distance, and resources.</p>
-              <p>ThanziLearn was created to help bridge that gap by offering flexible healthcare education that supports continuous learning. Through focused courses and clear learning experiences, we aim to make it easier for learners to grow their knowledge and apply it in practice.</p>
+            <div className="relative">
+              <img src="/images/why2.jpg" alt="Healthcare professionals learning together" className="aspect-[4/3] w-full rounded-xl border border-border object-cover" />
             </div>
           </div>
         </div>
@@ -1035,7 +1136,7 @@ function AuthPage({ reg = false, admin = false }) {
 function InfoPage({ title, text, backTo = '/login', backLabel = 'Back to sign in', embedded = false }) {
   const content = (
     <div className="w-full max-w-lg rounded-xl border border-border bg-white p-6 shadow-sm md:p-8">
-      <Link to="/" className="font-display text-xl font-semibold tracking-[-0.02em] text-forest">Thanzi<span className="text-teal">Learn</span></Link>
+      <Link to="/" className="font-display text-xl font-semibold tracking-[-0.02em] text-lake">ThanziLearn</Link>
       <h1 className="mt-4 font-display text-2xl font-semibold text-forest">{title}</h1>
       <p className="mt-2.5 text-[13px] leading-6 text-body">{text}</p>
       <div className="mt-6 flex flex-wrap gap-3"><Link to={backTo} className={btn}>{backLabel}</Link><Link to="/contact" className={btnSoft}>Contact support</Link></div>
@@ -1060,7 +1161,7 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
     <div className="min-h-screen bg-mist text-ink">
       <div className="flex min-h-screen">
         <aside className="hidden w-72 flex-col border-r border-border bg-white p-5 lg:flex">
-          <Link to="/" className="font-display text-xl font-semibold tracking-[-0.02em]">Thanzi<span className="text-lake">Learn</span></Link>
+          <Link to="/" className="font-display text-xl font-semibold tracking-[-0.02em] text-lake">ThanziLearn</Link>
           <div className="mt-7 flex items-center gap-3 rounded-xl bg-mint p-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-lake font-display text-xs font-semibold text-white">{initials(user?.name)}</div>
             <div className="min-w-0"><div className="truncate text-sm font-medium">{user?.name}</div><div className="text-[11px] text-body">Learner account</div></div>
@@ -1076,7 +1177,7 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
           <header className="border-b border-border bg-white px-4 py-3.5 md:px-6">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-3 lg:hidden"><Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em]">Thanzi<span className="text-lake">Learn</span></Link></div>
+                <div className="flex items-center gap-3 lg:hidden"><Link to="/" className="font-display text-lg font-semibold tracking-[-0.02em] text-lake">ThanziLearn</Link></div>
                 <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">{current}</div>
                 <h1 className="truncate font-display text-xl font-semibold">{title}</h1>
                 {subtitle && <p className="text-[13px] text-body">{subtitle}</p>}
@@ -1362,7 +1463,7 @@ function CertificateViewPage() {
       <div className="mx-auto max-w-4xl">
         <div className="rounded-2xl border border-border bg-white p-4 shadow-sm print:border-0 print:p-0 print:shadow-none">
           <div className="rounded-xl border-4 border-lake bg-white p-8 text-center md:p-12">
-            <div className="font-display text-2xl font-semibold">Thanzi<span className="text-lake">Learn</span></div>
+            <div className="font-display text-2xl font-semibold text-lake">ThanziLearn</div>
             <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-muted">Certificate of completion</p>
             <p className="mt-8 text-base text-body">This certifies that</p>
             <h2 className="mt-2 font-display text-3xl font-semibold">{user?.name}</h2>
