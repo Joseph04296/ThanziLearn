@@ -24,6 +24,7 @@ const Icon = ({ name, className = 'h-5 w-5' }) => {
   if (name === 'play') return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z" fill="currentColor" stroke="none"/></svg>;
   if (name === 'search') return <svg {...p}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>;
   if (name === 'user') return <svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>;
+  if (name === 'mail') return <svg {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>;
   if (name === 'arrow') return <svg {...p}><path d="M5 12h14M13 6l6 6-6 6"/></svg>;
   if (name === 'menu') return <svg {...p}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   if (name === 'x') return <svg {...p}><path d="M6 6l12 12M18 6 6 18"/></svg>;
@@ -206,16 +207,24 @@ function Site({ children }) {
 
 function Wrap({ children }) { return <div className="mx-auto max-w-[1200px] px-5 py-12 lg:px-10 lg:py-16">{children}</div>; }
 
-function PageHero({ eyebrow, title, text, image = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1600&q=80' }) {
+// Shared hero for every page except the home page. Fixed height, one text column
+// and one type scale so all inner pages feel part of the same family.
+function PageHero({ eyebrow, title, text, image = '/images/herobg1.jpg' }) {
   return (
-    <section className="relative isolate min-h-[620px] overflow-hidden bg-forest md:min-h-[720px]">
-      <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" />
-      <div className="relative mx-auto flex min-h-[620px] max-w-[1200px] items-center px-5 py-20 md:min-h-[720px] lg:px-10">
-        <div className="max-w-3xl">
-          {eyebrow && <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-mint">{eyebrow}</p>}
-          <h1 className="font-display text-4xl font-bold leading-tight text-white md:text-5xl" style={{ color: '#FFFFFF' }}>{title}</h1>
-          {text && <p className="mt-4 max-w-2xl text-base leading-7 text-white/85 md:text-lg">{text}</p>}
+    <section className="relative isolate h-[420px] overflow-hidden bg-forest md:h-[440px] lg:h-[460px]">
+      <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+      <div className="absolute inset-0 bg-gradient-to-r from-forest/95 via-forest/80 to-forest/45" />
+      <div className="absolute inset-0 bg-gradient-to-t from-forest/80 via-transparent to-transparent" />
+      <div className="relative mx-auto flex h-full max-w-[1200px] items-center px-5 lg:px-10">
+        <div className="max-w-2xl">
+          {eyebrow && (
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-orange" aria-hidden="true" />
+              {eyebrow}
+            </p>
+          )}
+          <h1 className="font-display text-4xl font-extrabold leading-[1.1] text-white md:text-5xl" style={{ color: '#FFFFFF' }}>{title}</h1>
+          {text && <p className="mt-4 line-clamp-3 max-w-xl text-base leading-7 text-white/85 md:text-lg">{text}</p>}
         </div>
       </div>
     </section>
@@ -421,9 +430,9 @@ function Catalogue() {
   });
   return (
     <>
-      <PageHero eyebrow="Courses" title="Explore courses" text="Find practical training to support your professional development." image="https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1600&q=80" />
+      <PageHero eyebrow="Courses" title={<>Explore <span className="text-orange">practical</span> courses.</>} text="Flexible, healthcare-focused training designed to strengthen your knowledge and support better care." image="/images/course.jpg" />
       <Wrap>
-        <div className="-mt-6 mb-8 grid gap-4 rounded-2xl border border-ink/10 bg-white p-4 shadow-md md:grid-cols-[1fr_220px]">
+        <div className="-mt-8 mb-8 grid gap-4 rounded-2xl border border-border bg-white p-4 shadow-md md:-mt-12 md:grid-cols-[1fr_220px]">
           <label className="block"><span className="sr-only">Search courses</span><div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/40"><Icon name="search" className="h-4 w-4" /></span><input className={inp + ' pl-9'} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by title or keyword" /></div></label>
           <label className="block"><span className="sr-only">Filter by category</span><select className={inp} value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></label>
         </div>
@@ -451,9 +460,9 @@ function Preview() {
   const startTo = user ? `/learn/course/${id}` : '/register';
   return (
     <>
-      <PageHero eyebrow={course.category || 'Course'} title={course.title} text={course.description} image="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1600&q=80" />
+      <PageHero eyebrow={course.category || 'Course'} title={course.title} text={course.description} image="/images/course.jpg" />
       <Wrap>
-      <div className={card + ' -mt-6 md:p-8'}>
+      <div className={card + ' -mt-8 md:-mt-12 md:p-8'}>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink/70">
           <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-4 w-4 text-lake" />{lessons.length} lessons</span>
           <span className="inline-flex items-center gap-1.5"><Icon name="clock" className="h-4 w-4 text-lake" />About {fmt(total)}</span>
@@ -506,19 +515,7 @@ function Preview() {
 function About() {
   return (
     <>
-      {/* Hero: consistent layout, taller, bg image, no eyebrow, short heading with orange accent, white subheading box */}
-      <section className="relative isolate min-h-[620px] overflow-hidden bg-forest md:min-h-[720px]">
-        <img src="/images/about.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" />
-        <div className="relative mx-auto flex min-h-[620px] max-w-[1200px] items-center px-5 py-20 md:min-h-[720px] md:py-28 lg:px-10">
-          <div className="max-w-2xl">
-            <h1 className="font-display text-4xl font-extrabold leading-tight text-white md:text-5xl lg:text-[3.5rem]" style={{ color: '#FFFFFF' }}>
-              Making healthcare <span className="text-orange">learning</span> accessible.
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/90 md:text-lg">Flexible, practical courses that support healthcare professionals and students to grow with confidence.</p>
-          </div>
-        </div>
-      </section>
+      <PageHero eyebrow="About us" title={<>Making healthcare <span className="text-orange">learning</span> accessible.</>} text="Flexible, practical courses that support healthcare professionals and students to grow with confidence." image="/images/about.jpg" />
 
       {/* Our Story */}
       <section className="bg-white">
@@ -606,7 +603,7 @@ function HowItWorks() {
   ];
   return (
     <>
-      <PageHero eyebrow="How it works" title="A simple path from learning to completion" text="From discovery to certificate, every step is designed to be clear and manageable." image="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=1600&q=80" />
+      <PageHero eyebrow="How it works" title={<>A simple path to <span className="text-orange">completion</span>.</>} text="From finding a course to earning your certificate, every step is clear and manageable." image="/images/why2.jpg" />
       <Wrap>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
           {steps.map(({ icon, t, d }, i) => (
@@ -627,29 +624,71 @@ function HowItWorks() {
 
 function ContactPage() {
   const [sent, setSent] = useState(false);
+  const faqs = [
+    { q: 'Do I need an account to browse courses?', a: 'No. You can browse the course catalogue and preview any course for free. An account is only needed to start a course and track your progress.' },
+    { q: 'How do I start a course?', a: 'Create a free account, open the course you are interested in and work through the lessons at your own pace. Your progress is saved automatically.' },
+    { q: 'How long does a course take?', a: 'Every course shows an estimated duration based on its lessons. You can complete it in one sitting or spread it across several days.' },
+    { q: 'Will I receive a certificate?', a: 'Yes. When you pass the final assessment, a certificate of completion becomes available in your learning dashboard.' },
+    { q: 'What happens if I do not pass the assessment?', a: 'You can review the lessons and take the assessment again. The pass mark for each course is shown on its course page.' },
+    { q: 'I forgot my password. What should I do?', a: 'Self-service password reset is not available yet. Contact your administrator or send us a message using the form above and we will help.' },
+  ];
   return (
     <>
-      <PageHero eyebrow="Contact" title="We’re here to help" text="Questions about courses, accounts, or using the platform? Send us a message." image="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=1600&q=80" />
+      <PageHero eyebrow="Contact" title={<>We’re here to <span className="text-orange">help</span>.</>} text="Questions about courses, accounts or using the platform? Send us a message and our team will respond." image="/images/contact.jpg" />
       <Wrap>
-        <div className="-mt-6 mx-auto max-w-4xl rounded-3xl border border-ink/10 bg-white p-6 shadow-md md:p-8">
-          <div className="grid gap-6 md:grid-cols-[0.85fr_1.15fr]">
-            <div className="rounded-2xl bg-ink p-6 text-white">
-              <div className="font-display text-2xl font-bold">Thanzi<span className="text-sun">Learn</span></div>
-              <div className="mt-6 space-y-4 text-sm text-white/85">
-                <p className="flex items-start gap-2"><Icon name="user" className="mt-0.5 h-4 w-4 text-mint" /><span><a className="underline hover:text-white" href="mailto:hello@thanzilearn.org">hello@thanzilearn.org</a></span></p>
-                <p className="flex items-start gap-2"><Icon name="clock" className="mt-0.5 h-4 w-4 text-mint" /><span>Support hours: Mon–Fri, 08:00–17:00</span></p>
-                <p className="flex items-start gap-2"><Icon name="shield" className="mt-0.5 h-4 w-4 text-mint" /><span>For urgent clinical matters, contact your local health authority or supervisor.</span></p>
+        <div className="-mt-8 grid gap-6 md:-mt-12 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="rounded-[14px] border border-border bg-forest p-6 text-white shadow-sm md:p-8">
+            <div className="font-display text-2xl font-bold">Thanzi<span className="text-orange">Learn</span></div>
+            <p className="mt-3 text-sm leading-6 text-white/75">We usually reply within one working day. For urgent clinical matters, contact your local health authority or supervisor.</p>
+            <div className="mt-6 space-y-4 text-sm">
+              <a href="mailto:hello@thanzilearn.org" className="flex items-start gap-3 text-white/85 transition hover:text-white">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mint"><Icon name="mail" className="h-4 w-4" /></span>
+                <span><span className="block text-[11px] uppercase tracking-[0.14em] text-white/50">Email</span>hello@thanzilearn.org</span>
+              </a>
+              <div className="flex items-start gap-3 text-white/85">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mint"><Icon name="clock" className="h-4 w-4" /></span>
+                <span><span className="block text-[11px] uppercase tracking-[0.14em] text-white/50">Support hours</span>Mon–Fri, 08:00–17:00</span>
+              </div>
+              <div className="flex items-start gap-3 text-white/85">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mint"><Icon name="shield" className="h-4 w-4" /></span>
+                <span><span className="block text-[11px] uppercase tracking-[0.14em] text-white/50">Clinical support</span>For urgent clinical matters, contact your local health authority.</span>
               </div>
             </div>
-            <form className="space-y-4" onSubmit={e => { e.preventDefault(); setSent(true); }}>
+          </div>
+          <div className={card + ' md:p-8'}>
+            <h2 className="font-display text-2xl font-semibold text-forest">Send us a message</h2>
+            <p className="mt-2 text-sm leading-6 text-body">Fill in the form and we will get back to you by email.</p>
+            <form className="mt-6 space-y-4" onSubmit={e => { e.preventDefault(); setSent(true); }}>
               {sent && <Notice type="success">Thanks for your message. If email delivery isn’t configured in this environment, please contact us directly at hello@thanzilearn.org.</Notice>}
-              <div><label className="mb-1 block text-sm font-medium">Name</label><input className={inp} required placeholder="Your full name" /></div>
-              <div><label className="mb-1 block text-sm font-medium">Email</label><input className={inp} required type="email" placeholder="you@example.com" /></div>
-              <div><label className="mb-1 block text-sm font-medium">Message</label><textarea className={inp + ' min-h-32'} required placeholder="How can we help?" /></div>
+              <div><label className="mb-1 block text-sm font-medium text-forest" htmlFor="contact-name">Name</label><input id="contact-name" className={inp} required placeholder="Your full name" /></div>
+              <div><label className="mb-1 block text-sm font-medium text-forest" htmlFor="contact-email">Email</label><input id="contact-email" className={inp} required type="email" placeholder="you@example.com" /></div>
+              <div><label className="mb-1 block text-sm font-medium text-forest" htmlFor="contact-message">Message</label><textarea id="contact-message" className={inp + ' min-h-32'} required placeholder="How can we help?" /></div>
               <button className={btn} type="submit">Send message <Icon name="arrow" className="h-4 w-4" /></button>
             </form>
           </div>
         </div>
+
+        {/* FAQs */}
+        <section className="mt-16 md:mt-20">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">FAQs</p>
+            <h2 className="mt-3 font-display text-3xl font-semibold text-forest md:text-4xl">Frequently asked questions.</h2>
+            <p className="mt-3 text-base leading-7 text-body">Quick answers to common questions. Still need help? Send us a message above.</p>
+          </div>
+          <div className="mt-8 grid gap-3">
+            {faqs.map(f => (
+              <details key={f.q} className="group rounded-[14px] border border-border bg-white px-5 py-4 transition hover:border-teal/40 open:shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base font-semibold text-forest md:text-lg">
+                  {f.q}
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mint text-teal transition group-open:bg-teal group-open:text-white">
+                    <Icon name="arrow" className="h-4 w-4 rotate-90 transition-transform group-open:-rotate-90" />
+                  </span>
+                </summary>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-body md:text-[15px]">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
       </Wrap>
     </>
   );
