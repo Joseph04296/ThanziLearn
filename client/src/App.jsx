@@ -333,13 +333,20 @@ function PageHero({ eyebrow, title, text, image = '/images/herobg1.jpg' }) {
   );
 }
 
+const courseImages = [
+  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=800&q=80',
+];
+const courseImage = c => c.image || courseImages[[...(c.title || '')].reduce((s, ch) => s + ch.charCodeAt(0), 0) % courseImages.length];
+
 function CourseCard({ course, to }) {
   const progress = pct(course.done || 0, course.lessons || 0);
   const href = to || `/courses/${course.id}`;
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white transition hover:border-teal/40 hover:shadow-sm">
       <div className="relative h-40 overflow-hidden border-b border-border bg-canvas">
-        <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80" alt="" className="h-full w-full object-cover" />
+        <img src={courseImage(course)} alt="" className="h-full w-full object-cover" />
       </div>
       <div className="flex flex-1 flex-col p-5">
         <div className={eyebrowCls}>{course.category || 'Healthcare'}</div>
