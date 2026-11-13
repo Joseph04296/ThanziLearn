@@ -12,7 +12,7 @@ const btn = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-te
 const btnOutline = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
 const btnSoft = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-white px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
 const card = 'min-w-0 rounded-xl border border-border bg-white p-5 sm:p-6';
-const blueCard = 'min-w-0 rounded-xl bg-teal p-5 sm:p-6';
+const darkCard = 'min-w-0 rounded-xl bg-forest p-5 sm:p-6';
 
 // Shared type scale: one eyebrow, one heading hierarchy and one body size across pages.
 const eyebrowCls = 'text-[11px] font-semibold uppercase tracking-[0.14em] text-teal';
@@ -487,13 +487,22 @@ function Landing() {
           <div className="max-w-lg">
             <p className={eyebrowOnDark}>Healthcare learning</p>
             <h1 className="mt-3 font-display text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] sm:text-[2.5rem] lg:text-[2.85rem]" style={{ color: '#FFFFFF' }}>
-              Building knowledge.<br /><span className="text-teal">Strengthening</span> healthcare.
+              Building knowledge.<br /><span className="text-[#7DB1FF]">Strengthening</span> healthcare.
             </h1>
             <p className="mt-4 max-w-md text-[15px] leading-7 text-white/80">Practical, self-paced courses for healthcare professionals and students.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/courses" className="inline-flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-teal transition hover:bg-mint">Explore courses</Link>
               <Link to="/about" className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-sm font-semibold text-white transition hover:bg-white/10">About us</Link>
             </div>
+            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] font-medium text-white/70">
+              {[
+                { icon: 'clock', label: 'Flexible learning' },
+                { icon: 'book', label: 'Practical courses' },
+                { icon: 'award', label: 'Certificates of completion' },
+              ].map(item => (
+                <li key={item.label} className="inline-flex items-center gap-2"><Icon name={item.icon} className="h-4 w-4 text-white/50" />{item.label}</li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
@@ -750,20 +759,20 @@ function Preview() {
         <div className="mt-8 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
           {/* Left: the course itself */}
           <div className="min-w-0 space-y-5">
-            <section className={blueCard}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">About this course</p>
-              <h2 className="mt-2 font-display text-xl font-semibold text-white">What this course covers</h2>
-              <div className="mt-3 space-y-3 text-[15px] leading-7 text-white/85">
+            <section className={card}>
+              <p className={eyebrowCls}>About this course</p>
+              <h2 className="mt-2 font-display text-xl font-semibold text-forest">What this course covers</h2>
+              <div className="mt-3 space-y-3 text-[15px] leading-7 text-body">
                 {about.map((p, i) => <p key={i}>{p}</p>)}
               </div>
-              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-white/20 pt-4 text-[12px] text-white/75">
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-4 text-[12px] text-muted">
                 <span className="inline-flex items-center gap-1.5"><Icon name="device" className="h-3.5 w-3.5" />Self-paced, on any device</span>
                 <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-3.5 w-3.5" />{lessons.length} short lessons</span>
                 <span className="inline-flex items-center gap-1.5"><Icon name="award" className="h-3.5 w-3.5" />Certificate on completion</span>
               </div>
             </section>
 
-            <section className={blueCard}>
+            <section className={darkCard}>
               <h2 className="font-display text-xl font-semibold text-white">What you will learn</h2>
               <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
                 {(course.skills?.length ? course.skills : [
