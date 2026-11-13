@@ -249,21 +249,23 @@ function Site({ children }) {
 
           {/* Left cluster: Explore + My learning + About */}
           <nav className="ml-2 hidden items-center gap-0.5 lg:flex" aria-label="Primary">
-            <div className="relative">
+            <div className="relative" onMouseEnter={() => setExplore(true)} onMouseLeave={() => setExplore(false)}>
               <button type="button" onClick={() => { setExplore(v => !v); setProfile(false); }} aria-expanded={explore} aria-haspopup="true" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-[14px] text-body transition hover:bg-canvas hover:text-teal">
                 Explore <Icon name="chevron" className={`h-3.5 w-3.5 transition-transform ${explore ? 'rotate-180' : ''}`} />
               </button>
               {explore && (
-                <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-border bg-white p-2 shadow-lg">
-                  <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Popular courses</p>
-                  {exploreCourses.map(c => (
-                    <Link key={c.id} to={`/courses/${c.id}`} className="block rounded-lg px-3 py-2 transition hover:bg-canvas">
-                      <span className="block text-[13px] font-medium leading-5 text-forest">{c.title}</span>
-                      <span className="block text-[11px] text-muted">{c.category}</span>
-                    </Link>
-                  ))}
-                  <div className="mt-1 border-t border-border pt-1">
-                    <Link to="/courses" className="flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium text-teal transition hover:bg-mint">Browse all courses <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
+                <div className="absolute left-0 top-full z-50 w-72 pt-1.5">
+                  <div className="rounded-xl border border-border bg-white p-2 shadow-lg">
+                    <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Popular courses</p>
+                    {exploreCourses.map(c => (
+                      <Link key={c.id} to={`/courses/${c.id}`} className="block rounded-lg px-3 py-2 transition hover:bg-canvas">
+                        <span className="block text-[13px] font-medium leading-5 text-forest">{c.title}</span>
+                        <span className="block text-[11px] text-muted">{c.category}</span>
+                      </Link>
+                    ))}
+                    <div className="mt-1 border-t border-border pt-1">
+                      <Link to="/courses" className="flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium text-teal transition hover:bg-mint">Browse all courses <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
+                    </div>
                   </div>
                 </div>
               )}
@@ -277,8 +279,10 @@ function Site({ children }) {
           {/* Search stays next to the left cluster */}
           <form onSubmit={submitSearch} className="ml-2 hidden min-w-0 flex-1 md:block" role="search">
             <div className="relative w-full max-w-[320px]">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"><Icon name="search" className="h-4 w-4" /></span>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-9 w-full rounded-full border border-border bg-canvas pl-9 pr-3 text-[13px] text-forest placeholder:text-muted transition focus:border-teal focus:bg-white" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-9 w-full rounded-full border border-border bg-canvas pl-4 pr-11 text-[13px] text-forest placeholder:text-muted transition focus:border-teal focus:bg-white" />
+              <button type="submit" aria-label="Search" className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-teal text-white transition hover:bg-[#0F52B5]">
+                <Icon name="search" className="h-3.5 w-3.5" />
+              </button>
             </div>
           </form>
 
@@ -343,8 +347,10 @@ function Site({ children }) {
         {open && (
           <div id="mobile-nav" className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-border bg-white px-4 py-4 lg:hidden">
             <form onSubmit={submitSearch} role="search" className="relative mb-3">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"><Icon name="search" className="h-4 w-4" /></span>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-10 w-full rounded-full border border-border bg-canvas pl-9 pr-3 text-[13px] text-forest placeholder:text-muted focus:border-teal focus:bg-white" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-10 w-full rounded-full border border-border bg-canvas pl-4 pr-12 text-[13px] text-forest placeholder:text-muted focus:border-teal focus:bg-white" />
+              <button type="submit" aria-label="Search" className="absolute right-1 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-teal text-white transition hover:bg-[#0F52B5]">
+                <Icon name="search" className="h-4 w-4" />
+              </button>
             </form>
             <nav className="flex flex-col gap-0.5 text-[14px]" aria-label="Mobile">
               <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Explore courses</p>
@@ -419,9 +425,8 @@ function PageHero({ eyebrow, title, text, image = '/images/herobg1.jpg' }) {
   return (
     <section className="relative isolate h-[360px] overflow-hidden bg-forest sm:h-[400px] lg:h-[440px]">
       <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
-      <div className="absolute inset-0 bg-gradient-to-r from-forest/90 via-forest/65 to-forest/25" />
-      <div className="absolute inset-0 bg-gradient-to-t from-forest/75 via-transparent to-transparent" />
-      <div className="relative mx-auto flex h-full max-w-[1200px] items-center px-5 lg:px-10">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/90 via-[#0B1F33]/65 to-[#0B1F33]/20" />
+      <div className="relative mx-auto flex h-full max-w-[1200px] items-center px-4 sm:px-5 lg:px-10">
         <div className="max-w-2xl">
           {eyebrow && <p className={`mb-3 ${eyebrowOnDark}`}>{eyebrow}</p>}
           <h1 className={`${h1Cls} text-white`} style={{ color: '#FFFFFF' }}>{title}</h1>
@@ -478,26 +483,17 @@ function Landing() {
       <section className="relative isolate overflow-hidden bg-forest">
         <img src="/images/herobg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0B1F33]/90 via-[#0B1F33]/65 to-[#0B1F33]/20" />
-        <div className="relative mx-auto flex max-w-[1200px] items-center px-5 py-16 md:py-24 lg:px-10 lg:py-28">
-          <div className="max-w-xl">
+        <div className="relative mx-auto flex max-w-[1200px] items-center px-5 py-14 md:py-20 lg:px-10 lg:py-24">
+          <div className="max-w-lg">
             <p className={eyebrowOnDark}>Healthcare learning</p>
-            <h1 className="mt-3 font-display text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] sm:text-[2.6rem] lg:text-[3rem]" style={{ color: '#FFFFFF' }}>
-              Building knowledge.<br /><span className="text-orange">Strengthening</span> healthcare.
+            <h1 className="mt-3 font-display text-[2rem] font-semibold leading-[1.12] tracking-[-0.02em] sm:text-[2.5rem] lg:text-[2.85rem]" style={{ color: '#FFFFFF' }}>
+              Building knowledge.<br /><span className="text-teal">Strengthening</span> healthcare.
             </h1>
-            <p className="mt-4 max-w-lg text-[15px] leading-7 text-white/80 md:text-base">Access practical learning opportunities designed to help healthcare professionals develop their knowledge, strengthen their skills and support better healthcare delivery.</p>
-            <div className="mt-7 flex flex-wrap gap-3">
+            <p className="mt-4 max-w-md text-[15px] leading-7 text-white/80">Practical, self-paced courses for healthcare professionals and students.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/courses" className="inline-flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-teal transition hover:bg-mint">Explore courses</Link>
               <Link to="/about" className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 px-5 text-sm font-semibold text-white transition hover:bg-white/10">About us</Link>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] font-medium text-white/70">
-              {[
-                { icon: 'clock', label: 'Flexible learning' },
-                { icon: 'book', label: 'Practical courses' },
-                { icon: 'award', label: 'Certificates of completion' },
-              ].map(item => (
-                <li key={item.label} className="inline-flex items-center gap-2"><Icon name={item.icon} className="h-4 w-4 text-white/50" />{item.label}</li>
-              ))}
-            </ul>
           </div>
         </div>
       </section>
@@ -532,18 +528,19 @@ function Landing() {
             <p className={eyebrowCls}>Why ThanziLearn</p>
             <h2 className={`mt-2.5 ${h2Cls}`}>Learning that supports better care.</h2>
             <p className={`mt-3 max-w-xl ${bodyCls}`}>Accessible, focused courses that help healthcare professionals grow their knowledge and skills.</p>
-            <ul className="mt-7 space-y-3.5">
+            <ul className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3">
               {[
                 { icon: 'device', title: 'Accessible learning' },
                 { icon: 'clock', title: 'Flexible learning' },
                 { icon: 'shield', title: 'Practical knowledge' },
               ].map(item => (
-                <li key={item.title} className="flex items-center gap-3">
-                  <Icon name={item.icon} className="h-[18px] w-[18px] shrink-0 text-forest" />
-                  <h3 className="font-display text-[15px] font-medium text-forest">{item.title}</h3>
+                <li key={item.title}>
+                  <Icon name={item.icon} className="h-5 w-5 text-forest" />
+                  <h3 className="mt-2.5 font-display text-[15px] font-medium leading-snug text-forest">{item.title}</h3>
                 </li>
               ))}
             </ul>
+            <Link to="/about" className={btn + ' mt-7'}>Learn more <Icon name="arrow" className="h-4 w-4" /></Link>
           </div>
         </div>
       </section>
@@ -590,7 +587,7 @@ function Landing() {
             </div>
             <div className="absolute -bottom-3 -right-2 rounded-lg bg-white px-3.5 py-2.5 shadow-lg md:-right-5">
               <div className="flex items-center gap-2.5">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-orange/15 text-orange"><Icon name="award" className="h-4 w-4" /></span>
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-mint text-teal"><Icon name="award" className="h-4 w-4" /></span>
                 <div><p className="text-[11px] text-muted">On completion</p><p className="text-[13px] font-semibold text-forest">Earn a certificate</p></div>
               </div>
             </div>
