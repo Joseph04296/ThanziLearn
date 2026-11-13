@@ -38,12 +38,108 @@ const Icon = ({ name, className = 'h-5 w-5' }) => {
   if (name === 'arrow') return <svg {...p}><path d="M5 12h14M13 6l6 6-6 6"/></svg>;
   if (name === 'menu') return <svg {...p}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   if (name === 'x') return <svg {...p}><path d="M6 6l12 12M18 6 6 18"/></svg>;
+  if (name === 'layers') return <svg {...p}><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg>;
   return <svg {...p}><circle cx="12" cy="12" r="9"/></svg>;
 };
 
 const fmt = (m = 0) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`);
 const pct = (done, total) => (total ? Math.round((done / total) * 100) : 0);
 const initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('') || 'U';
+
+// Local catalogue. It keeps the public pages complete when the API is empty
+// (for example on a fresh deployment before seed data is loaded), and gives
+// these sample courses their own working detail pages.
+const SAMPLE_COURSES = [
+  {
+    id: 'sample-1',
+    title: 'Safe medication administration',
+    category: 'Patient safety',
+    level: 'Beginner',
+    description: 'The five rights, allergy checks and recording, for safer medicine rounds.',
+    about: [
+      'Every medicine round carries risk. This short course walks through the practical checks that prevent the most common medication errors, from confirming the right patient to recording a dose correctly.',
+      'Lessons are written for frontline staff working in busy wards and clinics. You will practise a simple, repeatable checking routine and learn what to do when something goes wrong.',
+    ],
+    outcomes: [
+      'Apply the five rights before every dose',
+      'Check allergies and the medication chart correctly',
+      'Handle high-risk medicines with a second check',
+      'Record doses accurately and report errors safely',
+    ],
+    pass_mark: 70,
+    questions: 3,
+    curriculum: [
+      { id: 's1-l1', title: 'The five rights', duration_min: 5 },
+      { id: 's1-l2', title: 'Allergies and high-risk medicines', duration_min: 6 },
+      { id: 's1-l3', title: 'Preparing and checking a dose', duration_min: 5 },
+      { id: 's1-l4', title: 'Record, report and learn', duration_min: 5 },
+    ],
+  },
+  {
+    id: 'sample-2',
+    title: 'TB basics for frontline staff',
+    category: 'Infectious disease',
+    level: 'Beginner',
+    description: 'How TB spreads, how to spot possible cases, and how to protect yourself and others.',
+    about: [
+      'Tuberculosis is still one of the most common infectious diseases in the region, and frontline staff are often the first to notice the signs. This course covers how TB spreads, who is most at risk, and how to refer a patient for testing.',
+      'You will also learn the practical infection-prevention steps that protect staff, patients and visitors in waiting areas and consultation rooms.',
+    ],
+    outcomes: [
+      'Explain how TB spreads and who is most at risk',
+      'Recognise the common symptoms of possible TB',
+      'Refer patients for testing using national guidelines',
+      'Protect yourself and others with ventilation and masks',
+    ],
+    pass_mark: 70,
+    questions: 3,
+    curriculum: [
+      { id: 's2-l1', title: 'How TB spreads', duration_min: 5 },
+      { id: 's2-l2', title: 'Recognising possible TB', duration_min: 5 },
+      { id: 's2-l3', title: 'Testing and referral', duration_min: 5 },
+      { id: 's2-l4', title: 'Protecting yourself and others', duration_min: 6 },
+    ],
+  },
+  {
+    id: 'sample-3',
+    title: 'AI in healthcare: the basics',
+    category: 'Digital health',
+    level: 'Beginner',
+    description: 'What AI tools can and cannot do, and how to use their results carefully.',
+    about: [
+      'AI tools are increasingly used to read scans, flag risk and support triage. This introductory course explains what these tools actually do, where they help, and where clinical judgement must stay in charge.',
+      'You will look at false positives, false negatives and patient privacy, and practise treating an AI result as one input rather than an answer.',
+    ],
+    outcomes: [
+      'Describe what healthcare AI tools can and cannot do',
+      'Combine AI results with clinical judgement',
+      'Recognise false positives and false negatives',
+      'Protect patient data when using AI tools',
+    ],
+    pass_mark: 70,
+    questions: 3,
+    curriculum: [
+      { id: 's3-l1', title: 'What AI can and cannot do', duration_min: 6 },
+      { id: 's3-l2', title: 'Using AI results carefully', duration_min: 6 },
+      { id: 's3-l3', title: 'Privacy and responsibility', duration_min: 5 },
+    ],
+  },
+];
+
+const sampleCard = c => ({
+  ...c,
+  lessons: c.curriculum.length,
+  minutes: c.curriculum.reduce((s, l) => s + l.duration_min, 0),
+  sample: true,
+});
+
+// API courses take priority; sample courses only fill the gaps so the public
+// catalogue never looks empty and never shows a duplicate title.
+function mergeSampleCourses(list) {
+  const remote = Array.isArray(list) ? list : [];
+  const titles = new Set(remote.map(c => (c.title || '').trim().toLowerCase()));
+  return [...remote, ...SAMPLE_COURSES.map(sampleCard).filter(c => !titles.has(c.title.toLowerCase()))];
+}
 
 async function api(path, opts = {}, token) {
   const t = token ?? localStorage.getItem('t');
@@ -69,7 +165,7 @@ async function api(path, opts = {}, token) {
   return d;
 }
 
-function useCourses() {
+function useCourses({ fallback = false } = {}) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -77,9 +173,10 @@ function useCourses() {
     setLoading(true);
     setError('');
     try {
-      setCourses(await api('/courses'));
+      setCourses(fallback ? mergeSampleCourses(await api('/courses')) : await api('/courses'));
     } catch (e) {
-      setError(e.message);
+      if (fallback) setCourses(SAMPLE_COURSES.map(sampleCard));
+      else setError(e.message);
     } finally {
       setLoading(false);
     }
@@ -266,7 +363,7 @@ function CourseCard({ course, to }) {
 }
 
 function Landing() {
-  const { courses, loading } = useCourses();
+  const { courses, loading } = useCourses({ fallback: true });
   const featured = courses.slice(0, 3);
 
   return (
@@ -296,6 +393,23 @@ function Landing() {
               ))}
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/* Quiet stat row, Coursera-style: a thin band under the hero */}
+      <section className="border-b border-border bg-white">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-px bg-border md:grid-cols-4">
+          {[
+            { value: 'Self-paced', label: 'Learn on your schedule' },
+            { value: '100% online', label: 'Any device, anywhere' },
+            { value: 'Free to learn', label: 'No payment required' },
+            { value: 'Certificate', label: 'On successful completion' },
+          ].map(item => (
+            <div key={item.value} className="bg-white px-5 py-5 text-center md:py-6">
+              <div className="font-display text-[15px] font-semibold text-forest md:text-base">{item.value}</div>
+              <div className="mt-0.5 text-[12px] text-muted">{item.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -345,11 +459,7 @@ function Landing() {
           <div className="mt-8">
             {loading ? <Loading label="Loading courses…" /> : (
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                {(featured.length ? featured : [
-                  { id: 'sample-1', title: 'Infection Prevention Basics', description: 'Learn essential practices to reduce infection risks and improve patient safety.', category: 'Patient Safety', lessons: 6, minutes: 30 },
-                  { id: 'sample-2', title: 'Safe Medication Administration', description: 'Build confidence in safe medication checks and administration practices.', category: 'Clinical Practice', lessons: 8, minutes: 40 },
-                  { id: 'sample-3', title: 'TB Awareness and Prevention', description: 'Understand key information on TB awareness, prevention, and care support.', category: 'Public Health', lessons: 5, minutes: 25 },
-                ]).map(c => <CourseCard key={c.id} course={c} to={featured.length ? `/courses/${c.id}` : '/courses'} />)}
+                {featured.map(c => <CourseCard key={c.id} course={c} />)}
               </div>
             )}
           </div>
@@ -426,7 +536,7 @@ function Landing() {
 }
 
 function Catalogue() {
-  const { courses, loading, error, reload } = useCourses();
+  const { courses, loading, error, reload } = useCourses({ fallback: true });
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const categories = [...new Set(courses.map(c => c.category).filter(Boolean))];
@@ -458,63 +568,189 @@ function Preview() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    const local = SAMPLE_COURSES.find(c => c.id === id);
+    if (local) {
+      setData({
+        course: {
+          id: local.id,
+          title: local.title,
+          description: local.description,
+          category: local.category,
+          level: local.level,
+          pass_mark: local.pass_mark,
+          questions: local.questions,
+          skills: local.outcomes,
+          about: local.about,
+          sample: true,
+        },
+        lessons: local.curriculum,
+      });
+      setError('');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     api('/courses/' + id + '/preview').then(setData).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, [id]);
+
   if (loading) return <Wrap><Loading label="Loading course…" /></Wrap>;
   if (error || !data) return <Wrap><StateBox title="Course unavailable" text={error || 'This course could not be found.'} action={<Link to="/courses" className={btnSoft}>Back to courses</Link>} /></Wrap>;
+
   const { course, lessons } = data;
+  const isSample = course.sample || SAMPLE_COURSES.some(c => c.id === id);
   const total = lessons.reduce((s, l) => s + (l.duration_min || 0), 0);
-  const startTo = user ? `/learn/course/${id}` : '/register';
+  const level = course.level || 'Beginner';
+  const startTo = user ? (isSample ? '/learn/courses' : `/learn/course/${id}`) : '/register';
+  const cta = user ? (isSample ? 'Explore available courses' : 'Open course') : 'Enroll for free';
+  const about = course.about || [
+    course.description,
+    'This course is delivered in short, self-paced lessons you can complete on any device. Each lesson ends with a simple knowledge check, and a final assessment confirms your understanding.',
+  ];
+  const facts = [
+    { icon: 'layers', label: 'Level', value: level },
+    { icon: 'book', label: 'Lessons', value: `${lessons.length} lessons` },
+    { icon: 'clock', label: 'Duration', value: fmt(total) },
+    { icon: 'shield', label: 'Assessment', value: `Pass mark ${course.pass_mark}%` },
+  ];
+
   return (
     <>
       <PageHero eyebrow={course.category || 'Course'} title={course.title} text={course.description} image="/images/course.jpg" />
       <Wrap>
-      <div className={card + ' -mt-8 md:-mt-12 md:p-8'}>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-body">
-          <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-4 w-4 text-teal" />{lessons.length} lessons</span>
-          <span className="inline-flex items-center gap-1.5"><Icon name="clock" className="h-4 w-4 text-teal" />About {fmt(total)}</span>
-          <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-teal" />Pass mark {course.pass_mark}%</span>
-          <span className="inline-flex items-center gap-1.5"><Icon name="shield" className="h-4 w-4 text-teal" />{course.questions} quiz questions</span>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link to={startTo} className={btn}>{user ? 'Open course' : 'Create free account to start'} <Icon name="arrow" className="h-4 w-4" /></Link>
-          {!user && <Link to="/login" className={btnSoft}>I have an account</Link>}
-        </div>
-      </div>
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-5">
-          <section className={card}>
-            <h2 className="font-display text-lg font-semibold text-forest">What you will learn</h2>
-            {course.skills?.length ? (
-              <ul className="mt-3 space-y-1.5 pl-5 text-[13px] leading-6 text-body">{course.skills.map(s => <li key={s} className="list-disc">{s}</li>)}</ul>
-            ) : <p className="mt-2 text-[13px] leading-6 text-body">Key concepts and practical steps are covered across the lessons and assessment.</p>}
-          </section>
-          <section className={card}>
-            <h2 className="font-display text-lg font-semibold text-forest">Curriculum</h2>
-            <ol className="mt-4 space-y-2.5">
-              {lessons.map((l, i) => (
-                <li key={l.id} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-canvas p-3">
-                  <div><div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Lesson {i + 1}</div><div className="mt-0.5 text-sm font-medium text-forest">{l.title}</div></div>
-                  <div className="text-[13px] text-muted">{l.duration_min} min</div>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </div>
-        <aside className={card + ' h-fit'}>
-          <div className="rounded-lg bg-mint p-5">
-            <div className="font-display text-base font-semibold text-forest">Course details</div>
-            <dl className="mt-4 space-y-2.5 text-[13px] text-body">
-              <div className="flex justify-between gap-4"><dt>Lessons</dt><dd className="font-medium text-forest">{lessons.length}</dd></div>
-              <div className="flex justify-between gap-4"><dt>Duration</dt><dd className="font-medium text-forest">{fmt(total)}</dd></div>
-              <div className="flex justify-between gap-4"><dt>Assessment</dt><dd className="font-medium text-forest">Final quiz</dd></div>
-              <div className="flex justify-between gap-4"><dt>Certificate</dt><dd className="font-medium text-forest">On completion</dd></div>
-            </dl>
+        {/* Quick facts, lifted over the hero edge */}
+        <div className={card + ' -mt-8 md:-mt-12'}>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-4">
+            {facts.map(f => (
+              <div key={f.label} className="flex items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mint text-teal"><Icon name={f.icon} className="h-4 w-4" /></span>
+                <div>
+                  <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted">{f.label}</div>
+                  <div className="text-[13px] font-medium text-forest">{f.value}</div>
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="mt-3.5 text-[11px] leading-5 text-muted">Completion certificates are for learning records and are not a professional licence unless stated.</p>
-        </aside>
-      </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+          {/* Left: the course itself */}
+          <div className="space-y-5">
+            <section className={card}>
+              <p className={eyebrowCls}>About this course</p>
+              <h2 className="mt-2 font-display text-xl font-semibold text-forest">What this course covers</h2>
+              <div className="mt-3 space-y-3 text-[15px] leading-7 text-body">
+                {about.map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-4 text-[12px] text-muted">
+                <span className="inline-flex items-center gap-1.5"><Icon name="device" className="h-3.5 w-3.5" />Self-paced, on any device</span>
+                <span className="inline-flex items-center gap-1.5"><Icon name="book" className="h-3.5 w-3.5" />{lessons.length} short lessons</span>
+                <span className="inline-flex items-center gap-1.5"><Icon name="award" className="h-3.5 w-3.5" />Certificate on completion</span>
+              </div>
+            </section>
+
+            <section className={card}>
+              <h2 className="font-display text-xl font-semibold text-forest">What you will learn</h2>
+              <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {(course.skills?.length ? course.skills : [
+                  'Key concepts explained in plain language',
+                  'Practical steps you can use at work',
+                  'Knowledge checks to test understanding',
+                  'A final assessment to confirm progress',
+                ]).map(s => (
+                  <li key={s} className="flex gap-2.5 text-[13px] leading-6 text-body">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mint text-teal"><Icon name="check" className="h-3 w-3" /></span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className={card}>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <h2 className="font-display text-xl font-semibold text-forest">Course curriculum</h2>
+                <span className="text-[12px] text-muted">{lessons.length} lessons · {fmt(total)}</span>
+              </div>
+              <ol className="mt-4 divide-y divide-border overflow-hidden rounded-lg border border-border">
+                {lessons.map((l, i) => (
+                  <li key={l.id || i} className="flex items-center justify-between gap-4 bg-white px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-semibold text-muted">{i + 1}</span>
+                      <span className="truncate text-[13px] font-medium text-forest">{l.title}</span>
+                    </div>
+                    <span className="shrink-0 text-[12px] text-muted">{l.duration_min} min</span>
+                  </li>
+                ))}
+                <li className="flex items-center justify-between gap-4 bg-canvas px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-mint text-teal"><Icon name="shield" className="h-3 w-3" /></span>
+                    <span className="text-[13px] font-medium text-forest">Final assessment</span>
+                  </div>
+                  <span className="shrink-0 text-[12px] text-muted">{course.questions || 3} questions</span>
+                </li>
+              </ol>
+            </section>
+          </div>
+
+          {/* Right: certificate blueprint, then the enrolment call to action */}
+          <aside className="space-y-4 lg:sticky lg:top-24">
+            <div className="overflow-hidden rounded-xl border border-border bg-white">
+              <div className="flex items-center justify-between gap-3 border-b border-border bg-canvas px-4 py-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Certificate preview</span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-teal"><Icon name="award" className="h-3.5 w-3.5" />On completion</span>
+              </div>
+              <div className="p-4">
+                <div className="relative overflow-hidden rounded-lg border border-teal/25 bg-gradient-to-b from-white to-mint/50 px-5 py-6 text-center">
+                  <div className="pointer-events-none absolute inset-1.5 rounded border border-teal/15" aria-hidden="true" />
+                  <div className="relative">
+                    <div className="font-display text-sm font-semibold tracking-[-0.01em] text-forest">Thanzi<span className="text-teal">Learn</span></div>
+                    <div className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-muted">Certificate of completion</div>
+                    <div className="mx-auto mt-4 h-px w-10 bg-teal/30" aria-hidden="true" />
+                    <div className="mt-4 text-[10px] text-muted">This certifies that</div>
+                    <div className="mt-1 font-display text-base font-semibold text-forest">Your name</div>
+                    <div className="mt-2.5 text-[10px] text-muted">has successfully completed</div>
+                    <div className="mt-1 font-display text-[13px] font-semibold leading-snug text-teal">{course.title}</div>
+                    <div className="mt-5 flex items-end gap-3">
+                      <div className="flex-1">
+                        <div className="h-px bg-border" />
+                        <div className="mt-1 text-[8px] uppercase tracking-[0.14em] text-muted">Date</div>
+                      </div>
+                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-teal/25 bg-white text-teal"><Icon name="award" className="h-4 w-4" /></span>
+                      <div className="flex-1">
+                        <div className="h-px bg-border" />
+                        <div className="mt-1 text-[8px] uppercase tracking-[0.14em] text-muted">ThanziLearn</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={card}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-display text-2xl font-semibold text-forest">Free</span>
+                <span className="rounded-full bg-mint px-2.5 py-1 text-[11px] font-medium text-teal">No payment required</span>
+              </div>
+              <p className="mt-2 text-[13px] leading-6 text-body">Create a free learner account to enrol, work through the lessons and earn your certificate.</p>
+              <Link to={startTo} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
+              {!user && <Link to="/login" className={btnSoft + ' mt-2 w-full'}>I already have an account</Link>}
+              <ul className="mt-4 space-y-2 border-t border-border pt-4 text-[12px] text-body">
+                <li className="flex items-center gap-2"><Icon name="book" className="h-3.5 w-3.5 text-teal" />{lessons.length} self-paced lessons</li>
+                <li className="flex items-center gap-2"><Icon name="clock" className="h-3.5 w-3.5 text-teal" />About {fmt(total)} of content</li>
+                <li className="flex items-center gap-2"><Icon name="shield" className="h-3.5 w-3.5 text-teal" />Final assessment · {course.pass_mark}% to pass</li>
+                <li className="flex items-center gap-2"><Icon name="award" className="h-3.5 w-3.5 text-teal" />Certificate of completion</li>
+              </ul>
+              <p className="mt-3 text-[11px] leading-5 text-muted">Certificates are a record of learning and are not a professional licence unless stated.</p>
+            </div>
+
+            <div className="rounded-xl bg-mint p-4">
+              <p className="text-[13px] font-medium text-forest">Not sure this course is right for you?</p>
+              <p className="mt-1 text-[12px] leading-5 text-body">Our team can help you choose a course that fits your role and goals.</p>
+              <Link to="/contact" className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-teal hover:underline">Contact us <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
+            </div>
+          </aside>
+        </div>
       </Wrap>
     </>
   );
