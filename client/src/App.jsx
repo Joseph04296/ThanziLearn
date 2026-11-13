@@ -275,7 +275,7 @@ function Site({ children }) {
               )}
             </div>
             {user && (
-              <NavLink to="/learn/my-learning" className={({ isActive }) => `rounded-lg px-2.5 py-2 text-[14px] transition ${isActive ? 'text-teal' : 'text-body hover:bg-canvas hover:text-teal'}`}>My learning</NavLink>
+              <NavLink to="/learn" className={({ isActive }) => `rounded-lg px-2.5 py-2 text-[14px] transition ${isActive ? 'text-teal' : 'text-body hover:bg-canvas hover:text-teal'}`}>My learning</NavLink>
             )}
             <NavLink to="/about" className={({ isActive }) => `rounded-lg px-2.5 py-2 text-[14px] transition ${isActive ? 'text-teal' : 'text-body hover:bg-canvas hover:text-teal'}`}>About</NavLink>
           </nav>
@@ -363,7 +363,7 @@ function Site({ children }) {
               ))}
               <Link to="/courses" className="rounded-lg px-3 py-2 font-medium text-teal transition hover:bg-mint">Browse all courses</Link>
               <div className="my-2 border-t border-border" />
-              {user && <Link to="/learn/my-learning" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">My learning</Link>}
+              {user && <Link to="/learn" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">My learning</Link>}
               <Link to="/about" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">About</Link>
               <Link to="/contact" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">Contact</Link>
               {user ? (
@@ -401,7 +401,7 @@ function Site({ children }) {
             <ul className="mt-3 space-y-2.5 text-sm text-body">
               <li><Link to="/login" className="hover:text-teal">Log in</Link></li>
               <li><Link to="/register" className="hover:text-teal">Create account</Link></li>
-              <li><Link to={user ? (user.role === 'admin' ? '/admin' : '/learn/my-learning') : '/login'} className="hover:text-teal">My learning</Link></li>
+              <li><Link to={user ? (user.role === 'admin' ? '/admin' : '/learn') : '/login'} className="hover:text-teal">My learning</Link></li>
             </ul>
           </div>
           <div>
@@ -1105,7 +1105,7 @@ function AuthPage({ reg = false, admin = false }) {
     try {
       const data = await api('/auth/' + (reg ? 'register' : 'login'), { method: 'POST', body: fields });
       login(data);
-      navigate(data.user.role === 'admin' ? '/admin' : '/learn', { replace: true });
+      navigate(data.user.role === 'admin' ? '/admin' : '/', { replace: true });
     } catch (x) {
       setErr(x.message);
     } finally {
@@ -1525,6 +1525,10 @@ function RequireAuth({ children, adminOnly = false }) {
 
 function AdminGate({ children }) {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [location.pathname]);
+
   if (!user) return <AuthPage admin />;
   if (user.role !== 'admin') {
     return (
@@ -1533,23 +1537,65 @@ function AdminGate({ children }) {
       </div>
     );
   }
-  const link = ({ isActive }) => `text-sm ${isActive ? 'text-sun underline underline-offset-4' : 'text-white/80 hover:text-white'}`;
+
+  const links = [
+    ['Dashboard', '/admin'],
+    ['Courses', '/admin/courses'],
+    ['Users', '/admin/users'],
+    ['Progress', '/admin/progress'],
+  ];
+  const meta = {
+    '/admin': ['Dashboard', 'Overview of platform activity.'],
+    '/admin/courses': ['Courses', 'Create and manage learning content.'],
+    '/admin/new': ['New course', 'Add lessons, skills and quiz questions.'],
+    '/admin/users': ['Users', 'Manage learner and staff roles.'],
+    '/admin/progress': ['Learner progress', 'Progress across all learners and courses.'],
+  }[location.pathname] || ['Edit course', 'Update lessons, skills and quiz questions.'];
+  const [title, subtitle] = meta;
+
   return (
-    <div className="min-h-screen bg-mist">
-      <header className="bg-ink text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3 md:px-6">
-          <Link to="/admin" className="font-display text-lg font-semibold">Thanzi<span className="text-sun">Learn</span> <span className="text-[13px] font-medium text-white/60">Admin</span></Link>
-          <nav className="flex flex-1 flex-wrap gap-4">
-            <NavLink end to="/admin" className={link}>Dashboard</NavLink>
-            <NavLink to="/admin/courses" className={link}>Courses</NavLink>
-            <NavLink to="/admin/users" className={link}>Users</NavLink>
-            <NavLink to="/admin/progress" className={link}>Progress</NavLink>
+    <div className="min-h-screen bg-mist text-ink">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-72 flex-col border-r border-border bg-white p-5 lg:flex">
+          <Link to="/admin" className="font-display text-xl font-semibold tracking-[-0.02em] text-lake">ThanziLearn</Link>
+          <div className="mt-7 flex items-center gap-3 rounded-xl bg-mint p-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-lake font-display text-xs font-semibold text-white">{initials(user.name)}</div>
+            <div className="min-w-0"><div className="truncate text-sm font-medium">{user.name}</div><div className="text-[11px] text-body">Administrator</div></div>
+          </div>
+          <nav className="mt-7 space-y-1.5" aria-label="Admin">
+            {links.map(([label, to]) => (
+              <NavLink key={to} end={to === '/admin'} to={to} className={({ isActive }) => `block rounded-lg px-3 py-2 text-[13px] font-medium ${isActive ? 'bg-lake text-white' : 'text-body hover:bg-mint hover:text-forest'}`}>{label}</NavLink>
+            ))}
           </nav>
-          <Link to="/" className="text-sm text-white/80 hover:text-white">View site</Link>
-          <button onClick={logout} className="text-sm text-white/80 hover:text-white">Log out</button>
+          <div className="mt-auto space-y-2 pt-6">
+            <Link to="/" className={btnSoft + ' w-full'}>View site</Link>
+            <button onClick={logout} className={btn + ' w-full'}>Log out</button>
+          </div>
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="border-b border-border bg-white px-4 py-3.5 md:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3 lg:hidden"><Link to="/admin" className="font-display text-lg font-semibold tracking-[-0.02em] text-lake">ThanziLearn</Link></div>
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Admin</div>
+                <h1 className="truncate font-display text-xl font-semibold">{title}</h1>
+                <p className="text-[13px] text-body">{subtitle}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setOpen(v => !v)} className="rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium lg:hidden" aria-expanded={open} aria-controls="admin-nav">{open ? 'Close' : 'Menu'}</button>
+                <button onClick={logout} className="hidden rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium sm:inline-flex lg:hidden">Log out</button>
+              </div>
+            </div>
+            {open && (
+              <nav id="admin-nav" className="mt-3 grid gap-2 lg:hidden" aria-label="Admin mobile">
+                {links.map(([label, to]) => <NavLink key={to} end={to === '/admin'} to={to} className={({ isActive }) => `rounded-lg px-3 py-2 text-sm font-medium ${isActive ? 'bg-mint text-lake' : 'text-ink/80 hover:bg-mist'}`}>{label}</NavLink>)}
+                <Link to="/" className="rounded-lg px-3 py-2 text-sm font-medium text-ink/80 hover:bg-mist">View site</Link>
+              </nav>
+            )}
+          </header>
+          <div className="flex-1 px-4 py-6 md:px-6">{children}</div>
         </div>
-      </header>
-      <Wrap>{children}</Wrap>
+      </div>
     </div>
   );
 }
@@ -1564,8 +1610,6 @@ function Progress() {
   const groups = Object.values(by);
   return (
     <>
-      <h1 className="mb-1.5 font-display text-2xl font-semibold">Learner progress</h1>
-      <p className="mb-6 text-[13px] text-body">Progress across all learners and courses.</p>
       {!groups.length ? <StateBox title="No learner progress yet" text="Progress will appear here once learners start courses." /> : (
         <div className="space-y-4">
           {groups.map(g => (

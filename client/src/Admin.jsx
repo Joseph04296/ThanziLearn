@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://thanzilearn.onrender.com' : 'http://localhost:5000');
 async function api(path, opts = {}) {
   const r = await fetch(API + '/api' + path, {
     ...opts,
@@ -40,8 +40,7 @@ export function CourseEditor() {
   const del = async () => { if (confirm('Delete this course and all learner progress in it?')) { await api('/admin/courses/' + id, { method: 'DELETE' }); nav('/admin/courses'); } };
   return (
     <form onSubmit={save} className="max-w-4xl space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-lake">Admin</p><h1 className="font-display text-2xl font-semibold">{id ? 'Edit course' : 'New course'}</h1></div>
+      <div className="flex justify-end">
         <Link to="/admin/courses" className={ghost}>Back to courses</Link>
       </div>
       <section className={card + ' space-y-4'}>
@@ -120,8 +119,6 @@ export function Users() {
   if (!u) return <p className="text-sm text-ink/70">Loading users…</p>;
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold">Users</h1>
-      <p className="mt-2 mb-5 text-sm text-ink/70">Manage user roles. Role changes apply on the user’s next login.</p>
       {err && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
       <div className="overflow-x-auto rounded-xl border border-border bg-white">
         <table className="w-full text-sm"><thead><tr className="border-b border-ink/10 text-left text-ink/60"><th className="p-3">Name</th><th className="p-3">Email</th><th className="p-3">Role</th></tr></thead>
@@ -151,10 +148,28 @@ export function Dashboard() {
   const items = [['Learners', d.learners], ['Courses', d.courses], ['Lessons completed', d.lessons_done], ['Certificates earned', d.certificates]];
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold">Admin dashboard</h1>
-      <p className="mt-2 text-sm text-ink/70">Overview of platform activity.</p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{items.map(([k, v]) => <div key={k} className={card}><p className="font-display text-2xl font-semibold text-ink">{v}</p><p className="mt-1 text-sm text-ink/70">{k}</p></div>)}</div>
-      <div className="mt-8 flex flex-wrap gap-3"><Link to="/admin/new" className={btn}>Add a course</Link><Link to="/admin/progress" className={ghost}>View learner progress</Link></div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {items.map(([k, v]) => <div key={k} className={card}><p className="font-display text-2xl font-semibold text-ink">{v}</p><p className="mt-1 text-[13px] text-body">{k}</p></div>)}
+      </div>
+
+      <section className="mt-9">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold">Manage</h2>
+          <Link to="/admin/new" className={btn}>Add a course</Link>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Link to="/admin/courses" className={card + ' transition hover:border-lake/40'}>
+            <p className="font-display text-base font-semibold">Courses</p>
+            <p className="mt-1 text-[13px] leading-6 text-body">Create, edit and publish course content, lessons and assessments.</p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-lake">Manage courses <span aria-hidden="true">→</span></span>
+          </Link>
+          <Link to="/admin/progress" className={card + ' transition hover:border-lake/40'}>
+            <p className="font-display text-base font-semibold">Learner progress</p>
+            <p className="mt-1 text-[13px] leading-6 text-body">See how learners are moving through courses and who has completed.</p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-lake">View progress <span aria-hidden="true">→</span></span>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
@@ -167,8 +182,7 @@ export function AdminCourses() {
   if (!c) return <p className="text-sm text-ink/70">Loading courses…</p>;
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="font-display text-2xl font-semibold">Courses</h1><p className="mt-1 text-sm text-ink/70">Create and manage learning content.</p></div>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
         <Link to="/admin/new" className={btn}>Add a course</Link>
       </div>
       {!c.length ? <div className={card + ' text-center text-ink/70'}>No courses yet. Add your first course to get started.</div> : (
