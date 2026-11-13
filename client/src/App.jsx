@@ -449,12 +449,11 @@ function CourseCard({ course, to }) {
   const href = to || `/courses/${course.id}`;
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white transition hover:border-teal/40 hover:shadow-sm">
-      <div className="relative h-40 overflow-hidden border-b border-border bg-canvas">
+      <div className="relative h-48 overflow-hidden border-b border-border bg-canvas sm:h-52">
         <img src={courseImage(course)} alt="" className="h-full w-full object-cover" />
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <div className={eyebrowCls}>{course.category || 'Healthcare'}</div>
-        <h3 className="mt-2 font-display text-base font-semibold leading-snug text-forest">{course.title}</h3>
+        <h3 className="font-display text-base font-semibold leading-snug text-forest">{course.title}</h3>
         <p className="mt-2 line-clamp-2 text-[13px] leading-6 text-body">{course.description}</p>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
           <span className="inline-flex items-center gap-1.5" title="Level"><Icon name="layers" className="h-3.5 w-3.5" />Beginner</span>
