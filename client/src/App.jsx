@@ -287,7 +287,7 @@ function AuthDialog({ mode, onClose, onSwitch }) {
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-[#0B1F33]/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-[#0B1F33]/60 p-4 backdrop-blur-sm sm:items-center"
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
       role="presentation"
     >
