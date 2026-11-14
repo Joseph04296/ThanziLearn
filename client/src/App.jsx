@@ -1339,8 +1339,19 @@ function LearnDashboard() {
                 </div>
               )}
             </div>
-            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-canvas">
-              <img src="/images/mylearning.jpg" alt="A learner working through a healthcare course" className="aspect-[16/10] w-full object-cover" />
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-mint shadow-sm">
+              <img
+                src="/images/mylearning.jpg?v=2"
+                alt="A learner working through a healthcare course"
+                loading="eager"
+                decoding="async"
+                onError={e => {
+                  if (e.currentTarget.dataset.retried) return;
+                  e.currentTarget.dataset.retried = '1';
+                  e.currentTarget.src = '/images/mylearning.jpg?retry=' + Date.now();
+                }}
+                className="aspect-[16/10] w-full object-cover"
+              />
             </div>
           </div>
         </div>
