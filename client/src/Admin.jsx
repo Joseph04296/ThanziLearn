@@ -177,19 +177,55 @@ export function Dashboard() {
 export function AdminCourses() {
   const [c, setC] = useState(null);
   const [err, setErr] = useState('');
-  useEffect(() => { api('/courses').then(setC).catch(e => setErr(e.message)); }, []);
-  if (err) return <p className="text-sm text-red-700">{err}</p>;
+  const [notice, setNotice] = useState('');
+  const [busyId, setBusyId] = useState(null);
+  const load = () => api('/admin/courses').then(setC).catch(e => setErr(e.message));
+  useEffect(() => { load(); }, []);
+  const toggle = async x => {
+    setErr(''); setNotice(''); setBusyId(x.id);
+    try {
+      const next = await api('/admin/courses/' + x.id + '/visibility', { method: 'PATCH', body: { hidden: !x.hidden } });
+      setC(list => list.map(y => y.id === x.id ? { ...y, hidden: next.hidden } : y));
+      setNotice(next.hidden
+        ? `“${x.title}” is now hidden. Learners will no longer see it on the website.`
+        : `“${x.title}” is visible on the website again.`);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+  if (err && !c) return <p className="text-sm text-red-700">{err}</p>;
   if (!c) return <p className="text-sm text-ink/70">Loading courses…</p>;
+  const hiddenCount = c.filter(x => x.hidden).length;
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-xl text-sm leading-6 text-ink/60">
+          Hide a course to temporarily remove it from the website and learner catalogue. Hidden courses stay here, with their content and learner progress, so you can show them again at any time.
+        </p>
         <Link to="/admin/new" className={btn}>Add a course</Link>
       </div>
+      {err && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
+      {notice && <p className="mb-3 rounded-xl bg-mint px-3 py-2 text-sm text-ink">{notice}</p>}
+      {hiddenCount > 0 && <p className="mb-3 text-[12px] font-medium text-ink/60">{hiddenCount} hidden {hiddenCount === 1 ? 'course' : 'courses'} · not shown on the website</p>}
       {!c.length ? <div className={card + ' text-center text-ink/70'}>No courses yet. Add your first course to get started.</div> : (
         <div className="space-y-3">{c.map(x => (
-          <div key={x.id} className={card + ' flex flex-wrap items-center justify-between gap-4'}>
-            <div><p className="font-semibold text-ink">{x.title}</p><p className="mt-1 text-sm text-ink/60">{x.category ? x.category + ' · ' : ''}{x.lessons} lessons · about {x.minutes} min</p></div>
-            <div className="flex gap-2"><Link to={'/courses/' + x.id} className={ghost}>Preview</Link><Link to={'/admin/edit/' + x.id} className={ghost}>Edit</Link></div>
+          <div key={x.id} className={card + ' flex flex-wrap items-center justify-between gap-4' + (x.hidden ? ' bg-mist/40' : '')}>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold text-ink">{x.title}</p>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${x.hidden ? 'bg-[#fff7e8] text-forest' : 'bg-mint text-lake'}`}>{x.hidden ? 'Hidden' : 'Visible'}</span>
+              </div>
+              <p className="mt-1 text-sm text-ink/60">{x.category ? x.category + ' · ' : ''}{x.lessons} lessons · about {x.minutes} min</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to={'/courses/' + x.id} className={ghost}>Preview</Link>
+              <Link to={'/admin/edit/' + x.id} className={ghost}>Edit</Link>
+              <button type="button" className={ghost + ' disabled:opacity-60'} disabled={busyId === x.id} onClick={() => toggle(x)}>
+                {busyId === x.id ? 'Saving…' : x.hidden ? 'Show course' : 'Hide course'}
+              </button>
+            </div>
           </div>
         ))}</div>
       )}

@@ -7,6 +7,10 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://tha
 const Ctx = createContext(null);
 const useAuth = () => useContext(Ctx);
 
+// Opens the global login/register dialog from anywhere on the public site.
+const AuthDialogCtx = createContext(() => {});
+const useAuthDialog = () => useContext(AuthDialogCtx);
+
 const inp = 'h-11 w-full rounded-lg border border-border bg-white px-3.5 text-sm text-forest placeholder:text-muted/80 transition focus:border-teal';
 const btn = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-teal px-5 text-sm font-semibold text-white transition hover:bg-[#0F52B5] disabled:cursor-not-allowed disabled:opacity-60';
 const btnOutline = 'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-5 text-sm font-semibold text-forest transition hover:border-teal/50 hover:text-teal';
@@ -216,8 +220,162 @@ function Notice({ type = 'info', children }) {
   return <div className={`rounded-xl border px-3 py-2 text-sm ${styles}`}>{children}</div>;
 }
 
+function SocialIcon({ name }) {
+  if (name === 'Google') return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
+      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.54-5.17 3.54-8.87z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.63H1.29a12 12 0 0 0 0 10.74l3.98-3.09z" />
+      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42A11.97 11.97 0 0 0 12 0 12 12 0 0 0 1.29 6.63l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z" />
+    </svg>
+  );
+  if (name === 'LinkedIn') return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="#0A66C2" aria-hidden="true">
+      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.55V9h3.57v11.45z" />
+    </svg>
+  );
+  return (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="currentColor" aria-hidden="true">
+      <path d="M16.36 12.75c-.02-2.02 1.65-2.99 1.73-3.04-.94-1.38-2.41-1.57-2.93-1.59-1.25-.13-2.44.73-3.07.73-.63 0-1.61-.71-2.65-.69-1.36.02-2.62.79-3.32 2.01-1.41 2.45-.36 6.08 1.01 8.07.67.98 1.47 2.07 2.52 2.03 1.01-.04 1.39-.65 2.61-.65 1.22 0 1.56.65 2.62.63 1.08-.02 1.76-1 2.42-1.98.76-1.13 1.07-2.22 1.09-2.27-.02-.01-2.09-.8-2.11-3.23zM14.34 6.41c.55-.67.92-1.61.82-2.54-.79.03-1.75.53-2.32 1.2-.51.59-.96 1.54-.84 2.45.88.07 1.78-.45 2.34-1.11z" />
+    </svg>
+  );
+}
+
+function AuthDialog({ mode, onClose, onSwitch }) {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const isRegister = mode === 'register';
+  const [fields, setFields] = useState({ name: '', email: '', password: '' });
+  const [err, setErr] = useState('');
+  const [socialNotice, setSocialNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setErr('');
+    setSocialNotice('');
+  }, [mode]);
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  const submit = async e => {
+    e.preventDefault();
+    setErr('');
+    setSocialNotice('');
+    if (isRegister && fields.name.trim().length < 2) return setErr('Please enter your full name.');
+    if (fields.password.length < 6) return setErr('Password must be at least 6 characters.');
+    setBusy(true);
+    try {
+      const data = await api('/auth/' + (isRegister ? 'register' : 'login'), { method: 'POST', body: fields });
+      login(data);
+      onClose();
+      navigate(data.user.role === 'admin' ? '/admin' : '/', { replace: true });
+    } catch (x) {
+      setErr(x.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-[#0B1F33]/60 p-4 backdrop-blur-sm"
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-dialog-title"
+        className="relative my-auto w-full max-w-[440px] rounded-2xl border border-border bg-white p-6 shadow-2xl sm:p-7"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3.5 top-3.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-canvas hover:text-forest"
+        >
+          <Icon name="x" className="h-4 w-4" />
+        </button>
+
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">ThanziLearn</p>
+        <h2 id="auth-dialog-title" className="mt-1.5 pr-8 font-display text-[1.5rem] font-semibold leading-tight tracking-[-0.02em] text-forest">
+          {isRegister ? 'Create your free account' : 'Welcome back'}
+        </h2>
+        <p className="mt-1.5 text-[13px] leading-6 text-body">
+          {isRegister ? 'Join ThanziLearn to enrol in courses, track your progress and earn certificates.' : 'Log in to continue your courses and pick up where you left off.'}
+        </p>
+
+        <div className="mt-5 grid gap-2">
+          {['LinkedIn', 'Google', 'Apple'].map(provider => (
+            <button
+              key={provider}
+              type="button"
+              onClick={() => setSocialNotice(`${provider} sign-in is coming soon. Use your email and password for now.`)}
+              className="inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-white px-4 text-sm font-medium text-forest transition hover:border-teal/50 hover:bg-canvas"
+            >
+              <SocialIcon name={provider} />
+              Continue with {provider}
+            </button>
+          ))}
+        </div>
+
+        <div className="my-5 flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">or with email</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        {socialNotice && <div className="mb-4"><Notice>{socialNotice}</Notice></div>}
+
+        <form onSubmit={submit} className="space-y-3.5">
+          {isRegister && (
+            <label className="block">
+              <span className="mb-1 block text-[13px] font-medium text-forest">Full name</span>
+              <input className={inp} required value={fields.name} onChange={e => setFields({ ...fields, name: e.target.value })} placeholder="Your full name" autoComplete="name" autoFocus />
+            </label>
+          )}
+          <label className="block">
+            <span className="mb-1 block text-[13px] font-medium text-forest">Email address</span>
+            <input className={inp} required type="email" value={fields.email} onChange={e => setFields({ ...fields, email: e.target.value })} placeholder="you@example.com" autoComplete="email" autoFocus={!isRegister} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[13px] font-medium text-forest">Password</span>
+            <input className={inp} required type="password" value={fields.password} onChange={e => setFields({ ...fields, password: e.target.value })} placeholder={isRegister ? 'At least 6 characters' : 'Your password'} autoComplete={isRegister ? 'new-password' : 'current-password'} />
+          </label>
+          {!isRegister && (
+            <div className="flex justify-end">
+              <Link to="/forgot-password" onClick={onClose} className="text-[12px] font-medium text-teal hover:underline">Forgot password?</Link>
+            </div>
+          )}
+          {err && <Notice type="error">{err}</Notice>}
+          <button type="submit" className={btn + ' w-full'} disabled={busy}>
+            {busy ? 'Please wait…' : isRegister ? 'Create account' : 'Log in'}
+          </button>
+        </form>
+
+        <p className="mt-5 text-center text-[13px] text-body">
+          {isRegister ? 'Already have an account?' : 'New to ThanziLearn?'}{' '}
+          <button type="button" onClick={() => onSwitch(isRegister ? 'login' : 'register')} className="font-semibold text-teal hover:underline">
+            {isRegister ? 'Log in' : 'Create an account'}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function Site({ children }) {
   const { user, logout } = useAuth();
+  const openAuth = useAuthDialog();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -231,6 +389,13 @@ function Site({ children }) {
   useEffect(() => {
     setOpen(false); setExplore(false); setLang(false); setNotes(false); setProfile(false);
   }, [location.pathname, location.search]);
+
+  // Open the login/register dialog instead of leaving the page. Closing the
+  // mobile menu first means the dialog is never stacked behind it.
+  const promptAuth = mode => {
+    setOpen(false); setExplore(false); setProfile(false);
+    openAuth(mode);
+  };
 
   const submitSearch = e => {
     e.preventDefault();
@@ -339,8 +504,8 @@ function Site({ children }) {
               </>
             ) : (
               <>
-                <Link to="/login" className="hidden h-9 items-center rounded-lg px-3 text-[14px] font-medium text-teal transition hover:bg-mint sm:inline-flex">Log in</Link>
-                <Link to="/register" className="hidden h-9 items-center rounded-lg border border-teal bg-transparent px-3.5 text-[13px] font-semibold text-teal transition hover:bg-mint sm:inline-flex">Get started</Link>
+                <button type="button" onClick={() => promptAuth('login')} className="hidden h-9 items-center rounded-lg px-3 text-[14px] font-medium text-teal transition hover:bg-mint sm:inline-flex">Log in</button>
+                <button type="button" onClick={() => promptAuth('register')} className="hidden h-9 items-center rounded-lg border border-teal bg-transparent px-3.5 text-[13px] font-semibold text-teal transition hover:bg-mint sm:inline-flex">Get started</button>
               </>
             )}
             <button type="button" onClick={() => setOpen(v => !v)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-forest lg:hidden" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Close menu' : 'Open menu'}>
@@ -375,8 +540,8 @@ function Site({ children }) {
                 </>
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Link to="/login" className="inline-flex h-10 items-center justify-center rounded-lg border border-teal text-sm font-medium text-teal">Log in</Link>
-                  <Link to="/register" className="inline-flex h-10 items-center justify-center rounded-lg border border-teal text-sm font-semibold text-teal">Get started</Link>
+                  <button type="button" onClick={() => promptAuth('login')} className="inline-flex h-10 items-center justify-center rounded-lg border border-teal text-sm font-medium text-teal">Log in</button>
+                  <button type="button" onClick={() => promptAuth('register')} className="inline-flex h-10 items-center justify-center rounded-lg border border-teal text-sm font-semibold text-teal">Get started</button>
                 </div>
               )}
             </nav>
@@ -401,9 +566,9 @@ function Site({ children }) {
           <div>
             <h3 className="text-sm font-semibold text-forest">Account</h3>
             <ul className="mt-3 space-y-2.5 text-sm text-body">
-              <li><Link to="/login" className="hover:text-teal">Log in</Link></li>
-              <li><Link to="/register" className="hover:text-teal">Create account</Link></li>
-              <li><Link to={user ? (user.role === 'admin' ? '/admin' : '/learn') : '/login'} className="hover:text-teal">My learning</Link></li>
+              <li><button type="button" onClick={() => promptAuth('login')} className="hover:text-teal">Log in</button></li>
+              <li><button type="button" onClick={() => promptAuth('register')} className="hover:text-teal">Create account</button></li>
+              <li>{user ? <Link to={user.role === 'admin' ? '/admin' : '/learn'} className="hover:text-teal">My learning</Link> : <button type="button" onClick={() => promptAuth('login')} className="hover:text-teal">My learning</button>}</li>
             </ul>
           </div>
           <div>
@@ -681,6 +846,7 @@ function Catalogue() {
 function Preview() {
   const { id } = useParams();
   const { user } = useAuth();
+  const openAuth = useAuthDialog();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -738,7 +904,7 @@ function Preview() {
   const isSample = course.sample || SAMPLE_COURSES.some(c => c.id === id);
   const total = lessons.reduce((s, l) => s + (l.duration_min || 0), 0);
   const level = course.level || 'Beginner';
-  const startTo = user ? `/learn/course/${id}` : '/register';
+  const startTo = `/learn/course/${id}`;
   const cta = user ? (isSample ? 'Enroll in the course' : 'Open course') : 'Enroll for free';
   const enrollsThroughPopup = user && isSample;
   const about = course.about || [
@@ -896,10 +1062,12 @@ function Preview() {
               <p className="mt-2 text-[13px] leading-6 text-body">Create a free learner account to enrol, work through the lessons and earn your certificate.</p>
               {enrollsThroughPopup ? (
                 <button type="button" onClick={() => setEnrollOpen(true)} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></button>
-              ) : (
+              ) : user ? (
                 <Link to={startTo} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
+              ) : (
+                <button type="button" onClick={() => openAuth('register')} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></button>
               )}
-              {!user && <Link to="/login" className={btnSoft + ' mt-2 w-full'}>I already have an account</Link>}
+              {!user && <button type="button" onClick={() => openAuth('login')} className={btnSoft + ' mt-2 w-full'}>I already have an account</button>}
               <ul className="mt-4 space-y-2 border-t border-border pt-4 text-[12px] text-body">
                 <li className="flex items-center gap-2"><Icon name="book" className="h-3.5 w-3.5 text-teal" />{lessons.length} self-paced lessons</li>
                 <li className="flex items-center gap-2"><Icon name="clock" className="h-3.5 w-3.5 text-teal" />About {fmt(total)} of content</li>
@@ -1889,14 +2057,19 @@ function RedirectToLearnCertificate() {
 
 export default function App() {
   const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('u') || 'null'); } catch { return null; } });
+  const [authMode, setAuthMode] = useState(null);
   const login = ({ token, user }) => { localStorage.setItem('t', token); localStorage.setItem('u', JSON.stringify(user)); setUser(user); };
   const logout = () => { localStorage.clear(); setUser(null); };
+  const openAuth = useMemo(() => mode => setAuthMode(mode === 'register' ? 'register' : 'login'), []);
+  const closeAuth = useMemo(() => () => setAuthMode(null), []);
+  const switchAuth = useMemo(() => mode => setAuthMode(mode === 'register' ? 'register' : 'login'), []);
   const value = useMemo(() => ({ user, login, logout }), [user]);
   const home = user?.role === 'admin' ? '/admin' : '/learn';
   return (
     <Ctx.Provider value={value}>
-      <BrowserRouter>
-        <Routes>
+      <AuthDialogCtx.Provider value={openAuth}>
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Site><Landing /></Site>} />
           <Route path="/courses" element={<Site><Catalogue /></Site>} />
           <Route path="/courses/:id" element={<Site><Preview /></Site>} />
@@ -1936,7 +2109,9 @@ export default function App() {
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+        {authMode && <AuthDialog mode={authMode} onClose={closeAuth} onSwitch={switchAuth} />}
       </BrowserRouter>
+      </AuthDialogCtx.Provider>
     </Ctx.Provider>
   );
 }

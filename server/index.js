@@ -75,15 +75,16 @@ app.get('/api/courses', optAuth, wrap(async (req, res) => {
     (select coalesce(sum(duration_min),0) from lessons where course_id=c.id)::int as minutes,
     (select count(*) from progress p join lessons l on l.id=p.lesson_id where l.course_id=c.id and p.user_id=$1)::int as done,
     coalesce((select bool_or(passed) from attempts a where a.course_id=c.id and a.user_id=$1),false) as passed
-    from courses c order by c.id`, [req.user ? req.user.id : 0]));
+    from courses c where not c.hidden order by c.id`, [req.user ? req.user.id : 0]));
 }));
-app.get('/api/courses/:id/preview', wrap(async (req, res) => {
-  const [c] = await q('select id,title,description,category,pass_mark,skills,jsonb_array_length(questions) as questions from courses where id=$1', [req.params.id]);
+app.get('/api/courses/:id/preview', optAuth, wrap(async (req, res) => {
+  const isAdmin = req.user?.role === 'admin';
+  const [c] = await q('select id,title,description,category,pass_mark,skills,jsonb_array_length(questions) as questions,hidden from courses where id=$1 and (not hidden or $2)', [req.params.id, isAdmin]);
   if (!c) return res.status(404).json({ error: 'Course not found' });
   res.json({ course: c, lessons: await q('select id,title,duration_min from lessons where course_id=$1 order by position', [c.id]) });
 }));
 app.get('/api/courses/:id', auth(), wrap(async (req, res) => {
-  const [c] = await q('select * from courses where id=$1', [req.params.id]);
+  const [c] = await q('select * from courses where id=$1 and (not hidden or $2)', [req.params.id, req.user.role === 'admin']);
   if (!c) return res.status(404).json({ error: 'Course not found' });
   const lessons = await q('select id,title,body,video_url,duration_min from lessons where course_id=$1 order by position', [c.id]);
   const done = (await q('select p.lesson_id from progress p join lessons l on l.id=p.lesson_id where p.user_id=$1 and l.course_id=$2', [req.user.id, c.id])).map(r => r.lesson_id);
@@ -129,6 +130,21 @@ app.post('/api/admin/courses', auth(['admin']), wrap(async (req, res) => {
   for (const [i, l] of v.lessons.entries()) await putLesson(c.id, i, { ...l, id: null });
   res.json({ id: c.id });
 }));
+// The admin list intentionally includes hidden courses so they can be previewed
+// and restored. The public catalogue at /api/courses filters them out.
+app.get('/api/admin/courses', auth(['admin']), wrap(async (req, res) => {
+  res.json(await q(`select c.id,c.title,c.description,c.category,c.pass_mark,c.skills,c.hidden,
+    (select count(*) from lessons l where l.course_id=c.id)::int as lessons,
+    (select coalesce(sum(duration_min),0) from lessons l where l.course_id=c.id)::int as minutes,
+    (select count(*) from attempts a where a.course_id=c.id and a.passed)::int as certificates
+    from courses c order by c.id`));
+}));
+app.patch('/api/admin/courses/:id/visibility', auth(['admin']), wrap(async (req, res) => {
+  if (typeof req.body.hidden !== 'boolean') return res.status(400).json({ error: 'hidden must be true or false' });
+  const [c] = await q('update courses set hidden=$1 where id=$2 returning id,title,hidden', [req.body.hidden, req.params.id]);
+  if (!c) return res.status(404).json({ error: 'Course not found' });
+  res.json(c);
+}));
 app.get('/api/admin/courses/:id', auth(['admin']), wrap(async (req, res) => {
   const [c] = await q('select * from courses where id=$1', [req.params.id]);
   if (!c) return res.status(404).json({ error: 'Course not found' });
@@ -161,6 +177,7 @@ app.get('/', (req, res) => res.send('ThanziLearn API is running'));
 (async () => {
   try {
     await pool.query("alter table courses add column if not exists skills jsonb not null default '[]'");
+    await pool.query('alter table courses add column if not exists hidden boolean not null default false');
     await pool.query('alter table lessons add column if not exists duration_min int not null default 5');
   } catch (e) {
     console.error('Schema check failed:', e.message);
