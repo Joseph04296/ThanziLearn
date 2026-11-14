@@ -682,6 +682,25 @@ function Preview() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [enrollOpen, setEnrollOpen] = useState(false);
+  const [notified, setNotified] = useState(false);
+  const notifyKey = 'thanzi-notify:' + id;
+
+  useEffect(() => {
+    try { setNotified(localStorage.getItem(notifyKey) === '1'); } catch { setNotified(false); }
+  }, [notifyKey]);
+
+  useEffect(() => {
+    if (!enrollOpen) return;
+    const onKey = e => { if (e.key === 'Escape') setEnrollOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [enrollOpen]);
+
+  const notifyMe = () => {
+    try { localStorage.setItem(notifyKey, '1'); } catch {}
+    setNotified(true);
+  };
 
   useEffect(() => {
     const local = SAMPLE_COURSES.find(c => c.id === id);
@@ -717,8 +736,9 @@ function Preview() {
   const isSample = course.sample || SAMPLE_COURSES.some(c => c.id === id);
   const total = lessons.reduce((s, l) => s + (l.duration_min || 0), 0);
   const level = course.level || 'Beginner';
-  const startTo = user ? (isSample ? '/learn/courses' : `/learn/course/${id}`) : '/register';
-  const cta = user ? (isSample ? 'Explore available courses' : 'Open course') : 'Enroll for free';
+  const startTo = user ? `/learn/course/${id}` : '/register';
+  const cta = user ? (isSample ? 'Enroll in the course' : 'Open course') : 'Enroll for free';
+  const enrollsThroughPopup = user && isSample;
   const about = course.about || [
     course.description,
     'This course is delivered in short, self-paced lessons you can complete on any device. Each lesson ends with a simple knowledge check, and a final assessment confirms your understanding.',
@@ -872,7 +892,11 @@ function Preview() {
                 <span className="rounded-full bg-mint px-2.5 py-1 text-[11px] font-medium text-teal">No payment required</span>
               </div>
               <p className="mt-2 text-[13px] leading-6 text-body">Create a free learner account to enrol, work through the lessons and earn your certificate.</p>
-              <Link to={startTo} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
+              {enrollsThroughPopup ? (
+                <button type="button" onClick={() => setEnrollOpen(true)} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></button>
+              ) : (
+                <Link to={startTo} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
+              )}
               {!user && <Link to="/login" className={btnSoft + ' mt-2 w-full'}>I already have an account</Link>}
               <ul className="mt-4 space-y-2 border-t border-border pt-4 text-[12px] text-body">
                 <li className="flex items-center gap-2"><Icon name="book" className="h-3.5 w-3.5 text-teal" />{lessons.length} self-paced lessons</li>
@@ -891,6 +915,39 @@ function Preview() {
           </aside>
         </div>
       </Wrap>
+
+      {enrollOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1F33]/60 p-4"
+          onClick={() => setEnrollOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="enroll-title"
+            className="w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className={eyebrowCls}>Enrolment</p>
+                <h2 id="enroll-title" className="mt-1.5 font-display text-xl font-semibold text-forest">Lessons coming soon</h2>
+              </div>
+              <button type="button" onClick={() => setEnrollOpen(false)} aria-label="Close" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-body transition hover:bg-canvas hover:text-forest">
+                <Icon name="x" className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-3 text-[13px] leading-6 text-body">
+              The lessons for <span className="font-medium text-forest">{course.title}</span> haven’t been added yet. We’re preparing them now — leave your details and we’ll let you know as soon as the course opens.
+            </p>
+            {notified && <p className="mt-3 rounded-lg bg-mint px-3 py-2 text-[12px] font-medium text-lake">You’re on the list. We’ll notify you when the lessons are ready.</p>}
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button type="button" onClick={() => setEnrollOpen(false)} className={btnSoft}>Close</button>
+              <button type="button" onClick={notifyMe} disabled={notified} className={btn}>{notified ? 'You’re on the list' : 'Notify me'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1177,7 +1234,6 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
   const links = [
     ['Dashboard', '/learn'],
     ['Explore courses', '/learn/courses'],
-    ['My learning', '/learn/my-learning'],
     ['Certificates', '/learn/certificates'],
   ];
   return (
@@ -1227,41 +1283,106 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
 function LearnDashboard() {
   const { user } = useAuth();
   const { courses, loading, error, reload } = useCourses();
-  const inProgress = courses.filter(c => c.done > 0 && !c.passed);
-  const completed = courses.filter(c => c.passed);
-  const next = inProgress[0] || courses.find(c => !c.passed) || courses[0];
-  const lessonsDone = courses.reduce((s, c) => s + (c.done || 0), 0);
+  const [tab, setTab] = useState('progress');
+
+  // A course moves through three stages: started, lessons finished, then passed.
+  const inProgress = courses.filter(c => !c.passed && (c.done || 0) > 0 && (c.done || 0) < (c.lessons || 0));
+  const completed = courses.filter(c => !c.passed && (c.lessons || 0) > 0 && (c.done || 0) >= (c.lessons || 0));
+  const certificated = courses.filter(c => c.passed);
+  const unfinished = inProgress[0] || completed[0] || courses.find(c => !c.passed);
   const first = user?.name?.split(' ')[0] || 'there';
+
+  let recommendation;
+  if (loading) recommendation = 'Loading your courses…';
+  else if (error) recommendation = 'We couldn’t load your courses just now. Please try again.';
+  else if (inProgress.length) {
+    const c = inProgress[0];
+    recommendation = `You haven’t finished ${c.title} yet — you’re ${c.done} of ${c.lessons} lessons in. Pick up where you left off.`;
+  } else if (completed.length) {
+    const c = completed[0];
+    recommendation = `You’ve finished the lessons in ${c.title}. Take the final assessment to earn your certificate.`;
+  } else if (unfinished) {
+    recommendation = `${unfinished.title} is a good place to start — ${unfinished.lessons} short lessons, about ${fmt(unfinished.minutes)} in total.`;
+  } else if (certificated.length) {
+    recommendation = 'You’ve completed every available course. Your certificates are in the Certificated tab.';
+  } else {
+    recommendation = 'You haven’t started a course yet. Browse the courses to find one that fits your work.';
+  }
+
+  const tabs = [
+    { id: 'progress', label: 'In Progress', items: inProgress, empty: 'No courses in progress', emptyText: 'Start a course and it will appear here so you can pick up where you left off.' },
+    { id: 'completed', label: 'Completed', items: completed, empty: 'Nothing completed yet', emptyText: 'Finish every lesson in a course and it will show up here while you prepare for the assessment.' },
+    { id: 'certificated', label: 'Certificated', items: certificated, empty: 'No certificates yet', emptyText: 'Pass a course assessment to earn a certificate you can view, print or save as a PDF.' },
+  ];
+  const active = tabs.find(t => t.id === tab) || tabs[0];
+
   return (
-    <LearnerShell title={`Welcome, ${first}`} subtitle="Track your progress and continue learning." current="Dashboard">
-      {loading ? <Loading /> : error ? <StateBox title="Couldn’t load your dashboard" text={error} action={<button className={btn} onClick={reload}>Try again</button>} /> : courses.length === 0 ? (
-        <StateBox title="No courses available yet" text="When courses are published, you’ll be able to start learning here." action={<Link to="/courses" className={btn}>Browse site</Link>} />
-      ) : (
-        <>
-          {next && (
-            <section className="rounded-xl border border-border bg-mint p-6">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-lake">{next.done > 0 ? 'Continue learning' : 'Recommended to start'}</p>
-              <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <h2 className="font-display text-xl font-semibold">{next.title}</h2>
-                  <p className="mt-1.5 text-[13px] text-body">{next.done || 0} of {next.lessons} lessons complete · {fmt(next.minutes)}</p>
-                </div>
-                <Link to={`/learn/course/${next.id}`} className={btn}>{next.done > 0 ? 'Continue course' : 'Start course'}</Link>
-              </div>
-            </section>
+    <Site>
+      {/* White greeting hero, in keeping with the rest of the public site */}
+      <section className="border-b border-border bg-white">
+        <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-5 md:py-14 lg:px-10">
+          <p className={eyebrowCls}>My learning</p>
+          <h1 className={`mt-2 ${h1Cls}`}>Welcome back, {first}.</h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-body">{recommendation}</p>
+          {!loading && !error && unfinished && (
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to={`/learn/course/${unfinished.id}`} className={btn}>
+                {inProgress.length ? 'Continue learning' : completed.length ? 'Take the assessment' : 'Start course'}
+                <Icon name="arrow" className="h-4 w-4" />
+              </Link>
+              <Link to="/courses" className={btnSoft}>Browse courses</Link>
+            </div>
           )}
-          <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[['Courses available', courses.length], ['In progress', inProgress.length], ['Lessons completed', lessonsDone], ['Certificates earned', completed.length]].map(([label, value]) => (
-              <div key={label} className={card}><div className="font-display text-2xl font-semibold">{value}</div><div className="mt-1 text-[13px] text-body">{label}</div></div>
-            ))}
+        </div>
+      </section>
+
+      <Wrap>
+        <div className="rounded-xl border border-border bg-white">
+          <div className="flex flex-wrap items-center gap-1 border-b border-border p-2" role="tablist" aria-label="My learning">
+            {tabs.map(t => {
+              const selected = t.id === active.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setTab(t.id)}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-[13px] font-medium transition ${selected ? 'bg-mint text-lake' : 'text-body hover:bg-canvas hover:text-forest'}`}
+                >
+                  {t.label}
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] ${selected ? 'bg-lake text-white' : 'bg-canvas text-muted'}`}>{t.items.length}</span>
+                </button>
+              );
+            })}
+            <Link to="/courses" className="ml-auto hidden items-center gap-1.5 px-2 text-[13px] font-medium text-lake hover:underline sm:inline-flex">Browse courses <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
           </div>
-          <section className="mt-9">
-            <div className="mb-4 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Your courses</h2><Link to="/learn/my-learning" className="text-[13px] font-medium text-lake hover:underline">View all</Link></div>
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{courses.slice(0, 6).map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />)}</div>
-          </section>
-        </>
-      )}
-    </LearnerShell>
+
+          <div className="p-5 sm:p-6">
+            {loading ? <Loading /> : error ? (
+              <StateBox title="Couldn’t load your dashboard" text={error} action={<button className={btn} onClick={reload}>Try again</button>} />
+            ) : active.items.length === 0 ? (
+              <StateBox title={active.empty} text={active.emptyText} action={<Link to="/courses" className={btn}>Browse courses</Link>} />
+            ) : active.id === 'certificated' ? (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {active.items.map(c => (
+                  <article key={c.id} className={card + ' flex flex-col'}>
+                    <div className="rounded-lg bg-mint p-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-lake">Certificate earned</div>
+                    <h3 className="mt-3.5 font-display text-base font-semibold">{c.title}</h3>
+                    <p className="mt-1.5 text-[13px] leading-6 text-body">Course completed with a passing assessment.</p>
+                    <Link to={`/learn/certificates/${c.id}`} className={btn + ' mt-5 w-full'}>View certificate</Link>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {active.items.map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />)}
+              </div>
+            )}
+          </div>
+        </div>
+      </Wrap>
+    </Site>
   );
 }
 
@@ -1285,32 +1406,6 @@ function LearnCoursesPage() {
       {loading ? <Loading /> : error ? <StateBox title="Couldn’t load courses" text={error} action={<button className={btn} onClick={reload}>Try again</button>} /> : list.length ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{list.map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />)}</div>
       ) : <StateBox title="No courses found" text="Try adjusting your search or filters." />}
-    </LearnerShell>
-  );
-}
-
-function MyLearningPage() {
-  const { courses, loading, error, reload } = useCourses();
-  const inProgress = courses.filter(c => c.done > 0 && !c.passed);
-  const notStarted = courses.filter(c => !c.done && !c.passed);
-  const completed = courses.filter(c => c.passed);
-  const Section = ({ title, items, empty }) => (
-    <section className={card}>
-      <h2 className="font-display text-lg font-semibold">{title}</h2>
-      <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {items.length ? items.map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />) : <div className="rounded-lg bg-mist p-5 text-[13px] text-body md:col-span-2 xl:col-span-3">{empty}</div>}
-      </div>
-    </section>
-  );
-  return (
-    <LearnerShell title="My learning" subtitle="Manage courses and track your progress." current="My learning">
-      {loading ? <Loading /> : error ? <StateBox title="Couldn’t load your courses" text={error} action={<button className={btn} onClick={reload}>Try again</button>} /> : (
-        <div className="space-y-8">
-          <Section title="In progress" items={inProgress} empty="No courses in progress yet. Start a course to see it here." />
-          <Section title="Not started" items={notStarted} empty="You’ve started all available courses." />
-          <Section title="Completed" items={completed} empty="No completed courses yet. Pass an assessment to earn a certificate." />
-        </div>
-      )}
     </LearnerShell>
   );
 }
@@ -1368,7 +1463,7 @@ function CoursePage() {
           <h1 className="mt-1 font-display text-2xl font-semibold">{course.title}</h1>
           <p className="mt-1 text-[13px] text-body">{lessons.length} lessons · Pass mark {course.pass_mark}%</p>
         </div>
-        <Link to="/learn/my-learning" className={btnSoft}>Back to my learning</Link>
+        <Link to="/learn" className={btnSoft}>Back to my learning</Link>
       </div>
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between text-sm text-ink/70"><span>Progress</span><span>{progress}%</span></div>
@@ -1412,7 +1507,7 @@ function CoursePage() {
                   <p className="mt-2 text-[13px] text-body">{result.correct} of {result.total} correct · Pass mark {result.pass_mark}%</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     {result.passed ? <Link to={`/learn/certificates/${id}`} className={btn}>View certificate</Link> : <button onClick={() => { setResult(null); setAnswers([]); setIdx(0); setError(''); }} className={btn}>Review lessons & try again</button>}
-                    <Link to="/learn/my-learning" className={btnSoft}>Back to my learning</Link>
+                    <Link to="/learn" className={btnSoft}>Back to my learning</Link>
                   </div>
                 </div>
               ) : (
@@ -1667,14 +1762,14 @@ export default function App() {
 
           <Route path="/learn" element={<RequireAuth><LearnDashboard /></RequireAuth>} />
           <Route path="/learn/courses" element={<RequireAuth><LearnCoursesPage /></RequireAuth>} />
-          <Route path="/learn/my-learning" element={<RequireAuth><MyLearningPage /></RequireAuth>} />
+          <Route path="/learn/my-learning" element={<RequireAuth><Navigate to="/learn" replace /></RequireAuth>} />
           <Route path="/learn/certificates" element={<RequireAuth><CertificatesPage /></RequireAuth>} />
           <Route path="/learn/certificates/:id" element={<RequireAuth><CertificateViewPage /></RequireAuth>} />
           <Route path="/learn/course/:id" element={<RequireAuth><CoursePage /></RequireAuth>} />
 
           {/* unify/redirect legacy and placeholder learner routes */}
           <Route path="/course/:id" element={<RequireAuth><RedirectToLearnCourse /></RequireAuth>} />
-          <Route path="/my" element={<RequireAuth><Navigate to="/learn/my-learning" replace /></RequireAuth>} />
+          <Route path="/my" element={<RequireAuth><Navigate to="/learn" replace /></RequireAuth>} />
           <Route path="/certificate/:id" element={<RequireAuth><RedirectToLearnCertificate /></RequireAuth>} />
           <Route path="/learn/courses/:courseId/lessons/:lessonId" element={<RequireAuth><RedirectLegacyCourse /></RequireAuth>} />
           <Route path="/learn/courses/:courseId/assessment" element={<RequireAuth><RedirectLegacyCourse /></RequireAuth>} />
