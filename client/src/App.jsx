@@ -329,7 +329,8 @@ function Site({ children }) {
                       </div>
                       <div className="border-t border-border pt-1">
                         <Link to={user.role === 'admin' ? '/admin' : '/learn'} className={menuItem}>{user.role === 'admin' ? 'Admin dashboard' : 'My learning'}</Link>
-                        {user.role !== 'admin' && <Link to="/learn/certificates" className={menuItem}>Certificates</Link>}
+                        {user.role !== 'admin' && <Link to="/learn?tab=certificated" className={menuItem}>Certificates</Link>}
+                        <Link to="/learn/settings" className={menuItem}>Settings</Link>
                         <button type="button" onClick={logout} className="block w-full rounded-lg px-3 py-2 text-left text-[13px] text-body transition hover:bg-canvas hover:text-teal">Log out</button>
                       </div>
                     </div>
@@ -369,6 +370,7 @@ function Site({ children }) {
               {user ? (
                 <>
                   {user.role === 'admin' && <Link to="/admin" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">Admin dashboard</Link>}
+                  {user.role !== 'admin' && <Link to="/learn/settings" className="rounded-lg px-3 py-2 text-body transition hover:bg-canvas hover:text-forest">Settings</Link>}
                   <button type="button" onClick={logout} className="rounded-lg px-3 py-2 text-left text-body transition hover:bg-canvas hover:text-forest">Log out</button>
                 </>
               ) : (
@@ -1283,7 +1285,10 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
 function LearnDashboard() {
   const { user } = useAuth();
   const { courses, loading, error, reload } = useCourses();
-  const [tab, setTab] = useState('progress');
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get('tab');
+  const tab = ['progress', 'completed', 'certificated'].includes(tabParam) ? tabParam : 'progress';
+  const setTab = id => setParams(id === 'progress' ? {} : { tab: id }, { replace: true });
 
   // A course moves through three stages: started, lessons finished, then passed.
   const inProgress = courses.filter(c => !c.passed && (c.done || 0) > 0 && (c.done || 0) < (c.lessons || 0));
@@ -1303,10 +1308,8 @@ function LearnDashboard() {
     recommendation = `You’ve finished the lessons in ${c.title}. Take the final assessment to earn your certificate.`;
   } else if (unfinished) {
     recommendation = `${unfinished.title} is a good place to start — ${unfinished.lessons} short lessons, about ${fmt(unfinished.minutes)} in total.`;
-  } else if (certificated.length) {
-    recommendation = 'You’ve completed every available course. Your certificates are in the Certificated tab.';
   } else {
-    recommendation = 'You haven’t started a course yet. Browse the courses to find one that fits your work.';
+    recommendation = 'This is your learning space — pick up courses you’ve started, see what you’ve completed, and find your certificates, all in one place.';
   }
 
   const tabs = [
@@ -1321,18 +1324,25 @@ function LearnDashboard() {
       {/* White greeting hero, in keeping with the rest of the public site */}
       <section className="border-b border-border bg-white">
         <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-5 md:py-14 lg:px-10">
-          <p className={eyebrowCls}>My learning</p>
-          <h1 className={`mt-2 ${h1Cls}`}>Welcome back, {first}.</h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-body">{recommendation}</p>
-          {!loading && !error && unfinished && (
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to={`/learn/course/${unfinished.id}`} className={btn}>
-                {inProgress.length ? 'Continue learning' : completed.length ? 'Take the assessment' : 'Start course'}
-                <Icon name="arrow" className="h-4 w-4" />
-              </Link>
-              <Link to="/courses" className={btnSoft}>Browse courses</Link>
+          <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_340px] lg:gap-12">
+            <div className="min-w-0">
+              <p className={eyebrowCls}>My learning</p>
+              <h1 className={`mt-2 ${h1Cls}`}>Welcome back, {first}.</h1>
+              <p className="mt-3 max-w-2xl text-[15px] leading-7 text-body">{recommendation}</p>
+              {!loading && !error && unfinished && (
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link to={`/learn/course/${unfinished.id}`} className={btn}>
+                    {inProgress.length ? 'Continue learning' : completed.length ? 'Take the assessment' : 'Start course'}
+                    <Icon name="arrow" className="h-4 w-4" />
+                  </Link>
+                  <Link to="/courses" className={btnSoft}>Browse courses</Link>
+                </div>
+              )}
             </div>
-          )}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-canvas">
+              <img src="/images/mylearning.jpg" alt="A learner working through a healthcare course" className="aspect-[16/10] w-full object-cover" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1539,6 +1549,134 @@ function CoursePage() {
         </section>
       </div>
     </Wrap>
+  );
+}
+
+function SettingsPage() {
+  const { user, login } = useAuth();
+  const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '' });
+  const [pw, setPw] = useState({ current: '', password: '', confirm: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pwBusy, setPwBusy] = useState(false);
+  const [accountNotice, setAccountNotice] = useState(null);
+  const [passwordNotice, setPasswordNotice] = useState(null);
+
+  useEffect(() => {
+    api('/me')
+      .then(u => setForm({ name: u.name, email: u.email }))
+      .catch(e => setAccountNotice({ type: 'error', text: e.message }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const saveAccount = async e => {
+    e.preventDefault();
+    setSaving(true); setAccountNotice(null);
+    try {
+      const data = await api('/me', { method: 'PATCH', body: form });
+      login(data);
+      setForm({ name: data.user.name, email: data.user.email || form.email });
+      setAccountNotice({ type: 'success', text: 'Your account details have been updated.' });
+    } catch (x) {
+      setAccountNotice({ type: 'error', text: x.message });
+    } finally { setSaving(false); }
+  };
+
+  const savePassword = async e => {
+    e.preventDefault();
+    setPasswordNotice(null);
+    if (pw.password !== pw.confirm) {
+      setPasswordNotice({ type: 'error', text: 'The new passwords do not match.' });
+      return;
+    }
+    setPwBusy(true);
+    try {
+      await api('/me/password', { method: 'POST', body: { current: pw.current, password: pw.password } });
+      setPw({ current: '', password: '', confirm: '' });
+      setPasswordNotice({ type: 'success', text: 'Your password has been updated.' });
+    } catch (x) {
+      setPasswordNotice({ type: 'error', text: x.message });
+    } finally { setPwBusy(false); }
+  };
+
+  const roleLabel = user?.role === 'admin' ? 'Administrator' : user?.role === 'supervisor' ? 'Supervisor' : 'Learner account';
+
+  return (
+    <Site>
+      <section className="border-b border-border bg-white">
+        <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-5 md:py-12 lg:px-10">
+          <p className={eyebrowCls}>Account</p>
+          <h1 className={`mt-2 ${h1Cls}`}>Settings</h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-body">Update your personal details and password, and keep your ThanziLearn account secure.</p>
+        </div>
+      </section>
+
+      <Wrap>
+        <div className="mx-auto grid max-w-4xl gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+          <aside className={card}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-lake font-display text-sm font-semibold text-white">{initials(form.name)}</div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-forest">{form.name || 'Your account'}</p>
+                <p className="truncate text-[12px] text-muted">{form.email}</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-lg bg-mint px-3 py-2 text-[12px] font-medium text-lake">{roleLabel}</div>
+            <Link to="/learn" className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-lake hover:underline">Back to my learning <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
+          </aside>
+
+          <div className="min-w-0 space-y-6">
+            {loading ? <Loading label="Loading your account…" /> : (
+              <>
+                <form onSubmit={saveAccount} className={card}>
+                  <h2 className="font-display text-lg font-semibold text-forest">Account details</h2>
+                  <p className="mt-1 text-[13px] leading-6 text-body">This is how your name appears on lessons and certificates.</p>
+                  <div className="mt-5 grid gap-4">
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-medium text-forest">Full name</span>
+                      <input className={inp} required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full name" autoComplete="name" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-medium text-forest">Email address</span>
+                      <input className={inp} required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" autoComplete="email" />
+                    </label>
+                  </div>
+                  {accountNotice && <div className="mt-4"><Notice type={accountNotice.type}>{accountNotice.text}</Notice></div>}
+                  <div className="mt-5 flex justify-end">
+                    <button type="submit" className={btn} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+                  </div>
+                </form>
+
+                <form onSubmit={savePassword} className={card}>
+                  <h2 className="font-display text-lg font-semibold text-forest">Password</h2>
+                  <p className="mt-1 text-[13px] leading-6 text-body">Use at least 6 characters. You’ll stay signed in after the change.</p>
+                  <div className="mt-5 grid gap-4">
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-medium text-forest">Current password</span>
+                      <input className={inp} required type="password" value={pw.current} onChange={e => setPw({ ...pw, current: e.target.value })} placeholder="Your current password" autoComplete="current-password" />
+                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-forest">New password</span>
+                        <input className={inp} required type="password" value={pw.password} onChange={e => setPw({ ...pw, password: e.target.value })} placeholder="At least 6 characters" autoComplete="new-password" />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-forest">Confirm new password</span>
+                        <input className={inp} required type="password" value={pw.confirm} onChange={e => setPw({ ...pw, confirm: e.target.value })} placeholder="Repeat new password" autoComplete="new-password" />
+                      </label>
+                    </div>
+                  </div>
+                  {passwordNotice && <div className="mt-4"><Notice type={passwordNotice.type}>{passwordNotice.text}</Notice></div>}
+                  <div className="mt-5 flex justify-end">
+                    <button type="submit" className={btn} disabled={pwBusy}>{pwBusy ? 'Updating…' : 'Update password'}</button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      </Wrap>
+    </Site>
   );
 }
 
@@ -1774,8 +1912,8 @@ export default function App() {
           <Route path="/learn/courses/:courseId/lessons/:lessonId" element={<RequireAuth><RedirectLegacyCourse /></RequireAuth>} />
           <Route path="/learn/courses/:courseId/assessment" element={<RequireAuth><RedirectLegacyCourse /></RequireAuth>} />
           <Route path="/learn/courses/:courseId/results" element={<RequireAuth><RedirectLegacyCourse /></RequireAuth>} />
-          <Route path="/learn/profile" element={<RequireAuth><LearnerShell title="Profile" subtitle="Account details" current="Profile"><StateBox title="Profile editing coming soon" text="Your account name and email are managed by the system in this version. Contact an administrator if you need changes." action={<Link to="/learn" className={btnSoft}>Back to dashboard</Link>} /></LearnerShell></RequireAuth>} />
-          <Route path="/learn/settings" element={<RequireAuth><LearnerShell title="Settings" subtitle="Preferences" current="Settings"><StateBox title="Settings coming soon" text="Notification and preference settings are not available yet." action={<Link to="/learn" className={btnSoft}>Back to dashboard</Link>} /></LearnerShell></RequireAuth>} />
+          <Route path="/learn/profile" element={<RequireAuth><Navigate to="/learn/settings" replace /></RequireAuth>} />
+          <Route path="/learn/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/learn/help" element={<RequireAuth><LearnerShell title="Help & support" subtitle="Get assistance" current="Help"><StateBox title="Need help?" text="If you have trouble accessing a course or your account, reach out and we’ll assist you." action={<Link to="/contact" className={btn}>Contact support</Link>} /></LearnerShell></RequireAuth>} />
 
           <Route path="/admin" element={<AdminGate><Dashboard /></AdminGate>} />

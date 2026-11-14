@@ -42,6 +42,32 @@ app.post('/api/auth/login', wrap(async (req, res) => {
   res.json({ token: sign(u), user: { id: u.id, name: u.name, role: u.role } });
 }));
 
+// Account settings: read and update the signed-in user's own details.
+app.get('/api/me', auth(), wrap(async (req, res) => {
+  const [u] = await q('select id,name,email,role from users where id=$1', [req.user.id]);
+  if (!u) return res.status(404).json({ error: 'Account not found' });
+  res.json(u);
+}));
+app.patch('/api/me', auth(), wrap(async (req, res) => {
+  const name = (req.body.name || '').trim();
+  const email = (req.body.email || '').trim().toLowerCase();
+  if (name.length < 2) return res.status(400).json({ error: 'Enter your full name' });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: 'Enter a valid email address' });
+  if ((await q('select 1 from users where email=$1 and id<>$2', [email, req.user.id])).length) {
+    return res.status(400).json({ error: 'That email is already in use' });
+  }
+  const [u] = await q('update users set name=$1,email=$2 where id=$3 returning id,name,email,role', [name, email, req.user.id]);
+  res.json({ token: sign(u), user: u });
+}));
+app.post('/api/me/password', auth(), wrap(async (req, res) => {
+  const { current, password } = req.body;
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Your new password must be at least 6 characters' });
+  const [u] = await q('select password from users where id=$1', [req.user.id]);
+  if (!u || !(await bcrypt.compare(current || '', u.password))) return res.status(400).json({ error: 'Your current password is incorrect' });
+  await q('update users set password=$1 where id=$2', [await bcrypt.hash(password, 10), req.user.id]);
+  res.json({ ok: true });
+}));
+
 const optAuth = (req, res, next) => { try { req.user = jwt.verify((req.headers.authorization || '').replace('Bearer ', ''), process.env.JWT_SECRET); } catch {} next(); };
 app.get('/api/courses', optAuth, wrap(async (req, res) => {
   res.json(await q(`select c.id,c.title,c.description,c.category,c.skills,
