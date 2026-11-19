@@ -30,7 +30,10 @@ npm run dev                 # http://localhost:5173
 ## 5. Adding courses
 Log in as admin, open "New course", fill the form and edit the lessons and questions JSON. `answer` is the index of the correct option, starting at 0. A lesson's `video_url` must be an embed link (e.g. https://www.youtube.com/embed/VIDEO_ID).
 
-## 6. Deploy
+## 6. Learner enrolment
+Learners enroll from a course page before opening lessons. Enrolled courses appear in My Learning, and the admin progress page lists enrolled learners with their lesson and assessment status.
+
+## 7. Deploy
 - Render (web service): root `server`, build `npm install`, start `npm start`. Env vars: DATABASE_URL, JWT_SECRET, CLIENT_URL (your Vercel URL).
 - Vercel: root `client`, env var VITE_API_URL = your Render URL.
 - Run `npm run seed` once against the production database.

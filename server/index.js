@@ -74,29 +74,59 @@ app.get('/api/courses', optAuth, wrap(async (req, res) => {
     (select count(*) from lessons where course_id=c.id)::int as lessons,
     (select coalesce(sum(duration_min),0) from lessons where course_id=c.id)::int as minutes,
     (select count(*) from progress p join lessons l on l.id=p.lesson_id where l.course_id=c.id and p.user_id=$1)::int as done,
-    coalesce((select bool_or(passed) from attempts a where a.course_id=c.id and a.user_id=$1),false) as passed
+    coalesce((select bool_or(passed) from attempts a where a.course_id=c.id and a.user_id=$1),false) as passed,
+    exists(select 1 from enrollments e where e.course_id=c.id and e.user_id=$1) as enrolled
     from courses c where not c.hidden order by c.id`, [req.user ? req.user.id : 0]));
 }));
 app.get('/api/courses/:id/preview', optAuth, wrap(async (req, res) => {
   const isAdmin = req.user?.role === 'admin';
-  const [c] = await q('select id,title,description,category,pass_mark,skills,jsonb_array_length(questions) as questions,hidden from courses where id=$1 and (not hidden or $2)', [req.params.id, isAdmin]);
+  const [c] = await q(`select c.id,c.title,c.description,c.category,c.pass_mark,c.skills,
+    jsonb_array_length(c.questions) as questions,c.hidden,
+    exists(select 1 from enrollments e where e.course_id=c.id and e.user_id=$3) as enrolled
+    from courses c where c.id=$1 and (not c.hidden or $2)`, [req.params.id, isAdmin, req.user ? req.user.id : null]);
   if (!c) return res.status(404).json({ error: 'Course not found' });
   res.json({ course: c, lessons: await q('select id,title,duration_min from lessons where course_id=$1 order by position', [c.id]) });
+}));
+app.post('/api/courses/:id/enroll', auth(), wrap(async (req, res) => {
+  const [c] = await q('select id from courses where id=$1 and (not hidden or $2)', [req.params.id, req.user.role === 'admin']);
+  if (!c) return res.status(404).json({ error: 'Course not found' });
+  await q('insert into enrollments(user_id,course_id) values($1,$2) on conflict(user_id,course_id) do nothing', [req.user.id, c.id]);
+  const [enrollment] = await q('select enrolled_at from enrollments where user_id=$1 and course_id=$2', [req.user.id, c.id]);
+  res.json({ course_id: c.id, enrolled_at: enrollment.enrolled_at });
+}));
+app.get('/api/me/enrollments', auth(), wrap(async (req, res) => {
+  res.json(await q(`select c.id,c.title,c.description,c.category,c.skills,e.enrolled_at,
+    (select count(*) from lessons where course_id=c.id)::int as lessons,
+    (select coalesce(sum(duration_min),0) from lessons where course_id=c.id)::int as minutes,
+    (select count(*) from progress p join lessons l on l.id=p.lesson_id where l.course_id=c.id and p.user_id=e.user_id)::int as done,
+    coalesce((select bool_or(passed) from attempts a where a.course_id=c.id and a.user_id=e.user_id),false) as passed,
+    true as enrolled
+    from enrollments e join courses c on c.id=e.course_id
+    where e.user_id=$1 and not c.hidden order by e.enrolled_at desc,c.id`, [req.user.id]));
 }));
 app.get('/api/courses/:id', auth(), wrap(async (req, res) => {
   const [c] = await q('select * from courses where id=$1 and (not hidden or $2)', [req.params.id, req.user.role === 'admin']);
   if (!c) return res.status(404).json({ error: 'Course not found' });
+  const [enrollment] = await q('select 1 from enrollments where user_id=$1 and course_id=$2', [req.user.id, c.id]);
+  if (!enrollment) return res.status(403).json({ error: 'Enroll in this course before starting lessons' });
   const lessons = await q('select id,title,body,video_url,duration_min from lessons where course_id=$1 order by position', [c.id]);
   const done = (await q('select p.lesson_id from progress p join lessons l on l.id=p.lesson_id where p.user_id=$1 and l.course_id=$2', [req.user.id, c.id])).map(r => r.lesson_id);
   const [a] = await q('select coalesce(bool_or(passed),false) as passed from attempts where user_id=$1 and course_id=$2', [req.user.id, c.id]);
   res.json({ course: { id: c.id, title: c.title, description: c.description, pass_mark: c.pass_mark, questions: c.questions.map(x => ({ q: x.q, options: x.options })) }, lessons, done, passed: a.passed });
 }));
 app.post('/api/lessons/:id/complete', auth(), wrap(async (req, res) => {
+  const [lesson] = await q('select course_id from lessons where id=$1', [req.params.id]);
+  if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+  const [enrollment] = await q('select 1 from enrollments where user_id=$1 and course_id=$2', [req.user.id, lesson.course_id]);
+  if (!enrollment) return res.status(403).json({ error: 'Enroll in this course before recording progress' });
   await q('insert into progress(user_id,lesson_id) values($1,$2) on conflict do nothing', [req.user.id, req.params.id]);
   res.json({ ok: true });
 }));
 app.post('/api/courses/:id/quiz', auth(), wrap(async (req, res) => {
   const [c] = await q('select questions,pass_mark from courses where id=$1', [req.params.id]);
+  if (!c) return res.status(404).json({ error: 'Course not found' });
+  const [enrollment] = await q('select 1 from enrollments where user_id=$1 and course_id=$2', [req.user.id, req.params.id]);
+  if (!enrollment) return res.status(403).json({ error: 'Enroll in this course before taking the assessment' });
   const a = req.body.answers || [];
   const right = c.questions.filter((x, i) => a[i] === x.answer).length;
   const score = Math.round(100 * right / (c.questions.length || 1)), passed = score >= c.pass_mark;
@@ -105,11 +135,12 @@ app.post('/api/courses/:id/quiz', auth(), wrap(async (req, res) => {
 }));
 
 app.get('/api/admin/overview', auth(['admin', 'supervisor']), wrap(async (req, res) => {
-  res.json(await q(`select u.id,u.name,u.email,c.id as course_id,c.title,
+  res.json(await q(`select u.id,u.name,u.email,c.id as course_id,c.title,e.enrolled_at,
     (select count(*) from lessons l where l.course_id=c.id)::int as total,
     (select count(*) from progress p join lessons l on l.id=p.lesson_id where p.user_id=u.id and l.course_id=c.id)::int as done,
     coalesce((select bool_or(passed) from attempts a where a.user_id=u.id and a.course_id=c.id),false) as passed
-    from users u cross join courses c where u.role='learner' order by u.name,c.id`));
+    from enrollments e join users u on u.id=e.user_id join courses c on c.id=e.course_id
+    where u.role='learner' order by u.name,c.id`));
 }));
 const clean = b => {
   const lessons = (b.lessons || []).filter(l => (l.title || '').trim());
@@ -167,7 +198,11 @@ app.patch('/api/admin/users/:id/role', auth(['admin']), wrap(async (req, res) =>
 }));
 
 app.get('/api/admin/stats', auth(['admin']), wrap(async (req, res) => {
-  const [r] = await q(`select (select count(*) from users where role<>'admin')::int as learners,(select count(*) from courses)::int as courses,(select count(*) from progress)::int as lessons_done,(select count(distinct (user_id,course_id)) from attempts where passed)::int as certificates`);
+  const [r] = await q(`select (select count(*) from users where role<>'admin')::int as learners,
+    (select count(*) from courses)::int as courses,
+    (select count(*) from enrollments)::int as enrollments,
+    (select count(*) from progress)::int as lessons_done,
+    (select count(distinct (user_id,course_id)) from attempts where passed)::int as certificates`);
   res.json(r);
 }));
 app.get('/', (req, res) => res.send('ThanziLearn API is running'));
@@ -179,6 +214,18 @@ app.get('/', (req, res) => res.send('ThanziLearn API is running'));
     await pool.query("alter table courses add column if not exists skills jsonb not null default '[]'");
     await pool.query('alter table courses add column if not exists hidden boolean not null default false');
     await pool.query('alter table lessons add column if not exists duration_min int not null default 5');
+    await pool.query(`create table if not exists enrollments(
+      user_id int references users(id) on delete cascade,
+      course_id int references courses(id) on delete cascade,
+      enrolled_at timestamptz not null default now(),
+      primary key(user_id,course_id)
+    )`);
+    await pool.query(`insert into enrollments(user_id,course_id)
+      select distinct p.user_id,l.course_id from progress p join lessons l on l.id=p.lesson_id
+      where true on conflict(user_id,course_id) do nothing`);
+    await pool.query(`insert into enrollments(user_id,course_id)
+      select distinct user_id,course_id from attempts where true
+      on conflict(user_id,course_id) do nothing`);
   } catch (e) {
     console.error('Schema check failed:', e.message);
   }

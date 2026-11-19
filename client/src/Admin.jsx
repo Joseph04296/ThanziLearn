@@ -145,10 +145,10 @@ export function Dashboard() {
   useEffect(() => { api('/admin/stats').then(setD).catch(e => setErr(e.message)); }, []);
   if (err) return <p className="text-sm text-red-700">{err}</p>;
   if (!d) return <p className="text-sm text-ink/70">Loading dashboard…</p>;
-  const items = [['Learners', d.learners], ['Courses', d.courses], ['Lessons completed', d.lessons_done], ['Certificates earned', d.certificates]];
+  const items = [['Learners', d.learners], ['Courses', d.courses], ['Enrollments', d.enrollments], ['Lessons completed', d.lessons_done], ['Certificates earned', d.certificates]];
   return (
     <div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {items.map(([k, v]) => <div key={k} className={card}><p className="font-display text-2xl font-semibold text-ink">{v}</p><p className="mt-1 text-[13px] text-body">{k}</p></div>)}
       </div>
 
@@ -165,7 +165,7 @@ export function Dashboard() {
           </Link>
           <Link to="/admin/progress" className={card + ' transition hover:border-lake/40'}>
             <p className="font-display text-base font-semibold">Learner progress</p>
-            <p className="mt-1 text-[13px] leading-6 text-body">See how learners are moving through courses and who has completed.</p>
+            <p className="mt-1 text-[13px] leading-6 text-body">Review enrolled learners, course progress and assessment status.</p>
             <span className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-lake">View progress <span aria-hidden="true">→</span></span>
           </Link>
         </div>

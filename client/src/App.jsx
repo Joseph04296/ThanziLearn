@@ -197,6 +197,25 @@ function useCourses({ fallback = false } = {}) {
   return { courses, loading, error, reload: load };
 }
 
+function useEnrollments() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setCourses(await api('/me/enrollments'));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, []);
+  return { courses, loading, error, reload: load };
+}
+
 function StateBox({ title, text, action }) {
   return (
     <div className="rounded-xl border border-dashed border-border bg-white p-8 text-center">
@@ -845,6 +864,7 @@ function Catalogue() {
 
 function Preview() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const openAuth = useAuthDialog();
   const [data, setData] = useState(null);
@@ -852,6 +872,8 @@ function Preview() {
   const [loading, setLoading] = useState(true);
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [notified, setNotified] = useState(false);
+  const [enrollBusy, setEnrollBusy] = useState(false);
+  const [enrollError, setEnrollError] = useState('');
   const notifyKey = 'thanzi-notify:' + id;
 
   useEffect(() => {
@@ -868,6 +890,19 @@ function Preview() {
   const notifyMe = () => {
     try { localStorage.setItem(notifyKey, '1'); } catch {}
     setNotified(true);
+  };
+
+  const enroll = async () => {
+    setEnrollBusy(true);
+    setEnrollError('');
+    try {
+      await api('/courses/' + id + '/enroll', { method: 'POST' });
+      navigate('/learn/course/' + id);
+    } catch (e) {
+      setEnrollError(e.message);
+    } finally {
+      setEnrollBusy(false);
+    }
   };
 
   useEffect(() => {
@@ -904,8 +939,7 @@ function Preview() {
   const isSample = course.sample || SAMPLE_COURSES.some(c => c.id === id);
   const total = lessons.reduce((s, l) => s + (l.duration_min || 0), 0);
   const level = course.level || 'Beginner';
-  const startTo = `/learn/course/${id}`;
-  const cta = user ? (isSample ? 'Enroll in the course' : 'Open course') : 'Enroll for free';
+  const cta = user ? (isSample ? 'Enroll in the course' : course.enrolled ? 'Open course' : 'Enroll in the course') : 'Enroll for free';
   const enrollsThroughPopup = user && isSample;
   const about = course.about || [
     course.description,
@@ -1060,10 +1094,15 @@ function Preview() {
                 <span className="rounded-full bg-mint px-2.5 py-1 text-[11px] font-medium text-teal">No payment required</span>
               </div>
               <p className="mt-2 text-[13px] leading-6 text-body">Create a free learner account to enrol, work through the lessons and earn your certificate.</p>
+              {enrollError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-700">{enrollError}</p>}
               {enrollsThroughPopup ? (
                 <button type="button" onClick={() => setEnrollOpen(true)} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></button>
+              ) : user && course.enrolled ? (
+                <Link to={`/learn/course/${id}`} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
               ) : user ? (
-                <Link to={startTo} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
+                <button type="button" onClick={enroll} disabled={enrollBusy} className={btn + ' mt-4 w-full'}>
+                  {enrollBusy ? 'Enrolling…' : cta} <Icon name="arrow" className="h-4 w-4" />
+                </button>
               ) : (
                 <button type="button" onClick={() => openAuth('register')} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></button>
               )}
@@ -1452,14 +1491,14 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
 
 function LearnDashboard() {
   const { user } = useAuth();
-  const { courses, loading, error, reload } = useCourses();
+  const { courses, loading, error, reload } = useEnrollments();
   const [params, setParams] = useSearchParams();
   const tabParam = params.get('tab');
   const tab = ['progress', 'completed', 'certificated'].includes(tabParam) ? tabParam : 'progress';
   const setTab = id => setParams(id === 'progress' ? {} : { tab: id }, { replace: true });
 
-  // A course moves through three stages: started, lessons finished, then passed.
-  const inProgress = courses.filter(c => !c.passed && (c.done || 0) > 0 && (c.done || 0) < (c.lessons || 0));
+  // Enrolled courses move through in progress, lessons finished, then passed.
+  const inProgress = courses.filter(c => !c.passed && (c.done || 0) < Math.max(c.lessons || 0, 1));
   const completed = courses.filter(c => !c.passed && (c.lessons || 0) > 0 && (c.done || 0) >= (c.lessons || 0));
   const certificated = courses.filter(c => c.passed);
   const unfinished = inProgress[0] || completed[0] || courses.find(c => !c.passed);
@@ -1470,7 +1509,9 @@ function LearnDashboard() {
   else if (error) recommendation = 'We couldn’t load your courses just now. Please try again.';
   else if (inProgress.length) {
     const c = inProgress[0];
-    recommendation = `You haven’t finished ${c.title} yet — you’re ${c.done} of ${c.lessons} lessons in. Pick up where you left off.`;
+    recommendation = c.done
+      ? `You haven’t finished ${c.title} yet — you’re ${c.done} of ${c.lessons} lessons in. Pick up where you left off.`
+      : `You’re enrolled in ${c.title}. Start with the first lesson whenever you’re ready.`;
   } else if (completed.length) {
     const c = completed[0];
     recommendation = `You’ve finished the lessons in ${c.title}. Take the final assessment to earn your certificate.`;
@@ -1500,7 +1541,7 @@ function LearnDashboard() {
               {!loading && !error && unfinished && (
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link to={`/learn/course/${unfinished.id}`} className={btn}>
-                    {inProgress.length ? 'Continue learning' : completed.length ? 'Take the assessment' : 'Start course'}
+                    {inProgress.length ? (inProgress[0].done ? 'Continue learning' : 'Start course') : completed.length ? 'Take the assessment' : 'Start course'}
                     <Icon name="arrow" className="h-4 w-4" />
                   </Link>
                   <Link to="/courses" className={btnSoft}>Browse courses</Link>
@@ -1593,7 +1634,7 @@ function LearnCoursesPage() {
         <select className={inp} value={category} onChange={e => setCategory(e.target.value)} aria-label="Filter by category"><option value="">All categories</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select>
       </div>
       {loading ? <Loading /> : error ? <StateBox title="Couldn’t load courses" text={error} action={<button className={btn} onClick={reload}>Try again</button>} /> : list.length ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{list.map(c => <CourseCard key={c.id} course={c} to={`/learn/course/${c.id}`} />)}</div>
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{list.map(c => <CourseCard key={c.id} course={c} to={`/courses/${c.id}`} />)}</div>
       ) : <StateBox title="No courses found" text="Try adjusting your search or filters." />}
     </LearnerShell>
   );
@@ -1608,21 +1649,28 @@ function CoursePage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [enrollRequired, setEnrollRequired] = useState(false);
   const load = async (keepIdx = true) => {
     try {
       const data = await api('/courses/' + id);
       setD(data);
       setError('');
+      setEnrollRequired(false);
       if (!keepIdx) setIdx(0);
     } catch (e) {
       setError(e.message);
+      setEnrollRequired(e.status === 403);
     } finally {
       setLoading(false);
     }
   };
   useEffect(() => { setLoading(true); load(false); }, [id]);
   if (loading) return <Wrap><Loading label="Loading course…" /></Wrap>;
-  if (error || !d) return <Wrap><StateBox title="Couldn’t open course" text={error || 'Course not found.'} action={<Link to="/learn" className={btnSoft}>Back to dashboard</Link>} /></Wrap>;
+  if (error || !d) return <Wrap><StateBox
+    title={enrollRequired ? 'Enroll to start learning' : 'Couldn’t open course'}
+    text={enrollRequired ? 'Enroll in this course before opening its lessons.' : error || 'Course not found.'}
+    action={<Link to={enrollRequired ? `/courses/${id}` : '/learn'} className={btnSoft}>{enrollRequired ? 'View course' : 'Back to dashboard'}</Link>}
+  /></Wrap>;
   const { course, lessons, done, passed } = d;
   const progress = pct(done.length, lessons.length);
   const allDone = lessons.length > 0 && done.length === lessons.length;
@@ -1860,7 +1908,7 @@ function SettingsPage() {
 }
 
 function CertificatesPage() {
-  const { courses, loading, error, reload } = useCourses();
+  const { courses, loading, error, reload } = useEnrollments();
   const earned = courses.filter(c => c.passed);
   return (
     <LearnerShell title="Certificates" subtitle="Certificates earned from completed courses." current="Certificates">
@@ -2022,14 +2070,18 @@ function Progress() {
   const groups = Object.values(by);
   return (
     <>
-      {!groups.length ? <StateBox title="No learner progress yet" text="Progress will appear here once learners start courses." /> : (
+      {!groups.length ? <StateBox title="No enrollments yet" text="Learner progress will appear here once learners enroll in courses." /> : (
         <div className="space-y-4">
           {groups.map(g => (
             <section key={g.email} className={card}>
               <h2 className="font-display text-base font-semibold">{g.name} <span className="text-[13px] font-normal text-muted">{g.email}</span></h2>
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-[13px]"><thead><tr className="text-left text-muted"><th className="py-2 pr-3 font-medium">Course</th><th className="py-2 pr-3 font-medium">Lessons</th><th className="py-2 font-medium">Status</th></tr></thead>
-                  <tbody>{g.rows.map(x => (<tr key={x.course_id} className="border-t border-border"><td className="py-2 pr-3">{x.title}</td><td className="py-2 pr-3">{x.done}/{x.total}</td><td className="py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${x.passed ? 'bg-mint text-lake' : x.done > 0 ? 'bg-[#fff7e8] text-forest' : 'bg-mist text-muted'}`}>{x.passed ? 'Passed' : x.done > 0 ? 'In progress' : 'Not started'}</span></td></tr>))}</tbody>
+                  <tbody>{g.rows.map(x => {
+                    const status = x.passed ? 'Passed' : x.total > 0 && x.done >= x.total ? 'Assessment ready' : x.done > 0 ? 'In progress' : 'Enrolled';
+                    const statusClass = x.passed ? 'bg-mint text-lake' : x.done > 0 ? 'bg-[#fff7e8] text-forest' : 'bg-mist text-muted';
+                    return <tr key={x.course_id} className="border-t border-border"><td className="py-2 pr-3">{x.title}</td><td className="py-2 pr-3">{x.done}/{x.total}</td><td className="py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClass}`}>{status}</span></td></tr>;
+                  })}</tbody>
                 </table>
               </div>
             </section>
