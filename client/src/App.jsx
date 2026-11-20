@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminCourses, CourseEditor, Dashboard, Users } from './Admin.jsx';
 
@@ -239,6 +239,40 @@ function Notice({ type = 'info', children }) {
   return <div className={`rounded-xl border px-3 py-2 text-sm ${styles}`}>{children}</div>;
 }
 
+// Password field with an accessible Show/Hide toggle. The button sits outside
+// the label so clicking it never re-triggers the input's label behaviour.
+function PasswordInput({ label, value, onChange, placeholder, autoComplete = 'current-password', required = true }) {
+  const [show, setShow] = useState(false);
+  const id = useId();
+  return (
+    <div>
+      {label && <label htmlFor={id} className="mb-1 block text-[13px] font-medium text-forest">{label}</label>}
+      <div className="relative">
+        <input
+          id={id}
+          className={inp}
+          style={{ paddingRight: '3rem' }}
+          required={required}
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+        />
+        <button
+          type="button"
+          onClick={() => setShow(v => !v)}
+          aria-label={`${show ? 'Hide' : 'Show'} ${label || 'password'}`}
+          aria-pressed={show}
+          className="absolute right-2 top-1/2 inline-flex h-7 -translate-y-1/2 items-center rounded-md px-2 text-[12px] font-medium text-muted transition hover:bg-canvas hover:text-teal"
+        >
+          {show ? 'Hide' : 'Show'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function SocialIcon({ name }) {
   if (name === 'Google') return (
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
@@ -366,10 +400,13 @@ function AuthDialog({ mode, onClose, onSwitch }) {
             <span className="mb-1 block text-[13px] font-medium text-forest">Email address</span>
             <input className={inp} required type="email" value={fields.email} onChange={e => setFields({ ...fields, email: e.target.value })} placeholder="you@example.com" autoComplete="email" autoFocus={!isRegister} />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-[13px] font-medium text-forest">Password</span>
-            <input className={inp} required type="password" value={fields.password} onChange={e => setFields({ ...fields, password: e.target.value })} placeholder={isRegister ? 'At least 6 characters' : 'Your password'} autoComplete={isRegister ? 'new-password' : 'current-password'} />
-          </label>
+          <PasswordInput
+            label="Password"
+            value={fields.password}
+            onChange={e => setFields({ ...fields, password: e.target.value })}
+            placeholder={isRegister ? 'At least 6 characters' : 'Your password'}
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
+          />
           {!isRegister && (
             <div className="flex justify-end">
               <Link to="/forgot-password" onClick={onClose} className="text-[12px] font-medium text-teal hover:underline">Forgot password?</Link>
@@ -1374,7 +1411,13 @@ function AuthPage({ reg = false, admin = false }) {
           <div className="mt-7 space-y-4">
             {reg && <div><label className="mb-1 block text-sm font-medium text-forest">Full name</label><input className={inp} required value={fields.name} onChange={e => setFields({ ...fields, name: e.target.value })} placeholder="Full name" autoComplete="name" /></div>}
             <div><label className="mb-1 block text-sm font-medium text-forest">Email address</label><input className={inp} required type="email" value={fields.email} onChange={e => setFields({ ...fields, email: e.target.value })} placeholder="you@example.com" autoComplete="email" /></div>
-            <div><label className="mb-1 block text-sm font-medium text-forest">Password</label><input className={inp} required type="password" value={fields.password} onChange={e => setFields({ ...fields, password: e.target.value })} placeholder={reg ? 'At least 6 characters' : 'Password'} autoComplete={reg ? 'new-password' : 'current-password'} /></div>
+            <PasswordInput
+              label="Password"
+              value={fields.password}
+              onChange={e => setFields({ ...fields, password: e.target.value })}
+              placeholder={reg ? 'At least 6 characters' : 'Password'}
+              autoComplete={reg ? 'new-password' : 'current-password'}
+            />
             {err && <Notice type="error">{err}</Notice>}
             <button className={btn + ' w-full'} disabled={busy}>{busy ? 'Please wait…' : reg ? 'Create account' : 'Sign in'}</button>
             {!admin && <p className="text-center text-sm text-body">{reg ? 'Already have an account?' : 'Don’t have an account?'} <Link to={reg ? '/login' : '/register'} className="font-semibold text-teal hover:underline">{reg ? 'Sign in' : 'Register'}</Link></p>}
@@ -1841,19 +1884,28 @@ function SettingsPage() {
                   <h2 className="font-display text-lg font-semibold text-forest">Password</h2>
                   <p className="mt-1 text-[13px] leading-6 text-body">Use at least 6 characters. You’ll stay signed in after the change.</p>
                   <div className="mt-5 grid gap-4">
-                    <label className="block">
-                      <span className="mb-1 block text-sm font-medium text-forest">Current password</span>
-                      <input className={inp} required type="password" value={pw.current} onChange={e => setPw({ ...pw, current: e.target.value })} placeholder="Your current password" autoComplete="current-password" />
-                    </label>
+                    <PasswordInput
+                      label="Current password"
+                      value={pw.current}
+                      onChange={e => setPw({ ...pw, current: e.target.value })}
+                      placeholder="Your current password"
+                      autoComplete="current-password"
+                    />
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="block">
-                        <span className="mb-1 block text-sm font-medium text-forest">New password</span>
-                        <input className={inp} required type="password" value={pw.password} onChange={e => setPw({ ...pw, password: e.target.value })} placeholder="At least 6 characters" autoComplete="new-password" />
-                      </label>
-                      <label className="block">
-                        <span className="mb-1 block text-sm font-medium text-forest">Confirm new password</span>
-                        <input className={inp} required type="password" value={pw.confirm} onChange={e => setPw({ ...pw, confirm: e.target.value })} placeholder="Repeat new password" autoComplete="new-password" />
-                      </label>
+                      <PasswordInput
+                        label="New password"
+                        value={pw.password}
+                        onChange={e => setPw({ ...pw, password: e.target.value })}
+                        placeholder="At least 6 characters"
+                        autoComplete="new-password"
+                      />
+                      <PasswordInput
+                        label="Confirm new password"
+                        value={pw.confirm}
+                        onChange={e => setPw({ ...pw, confirm: e.target.value })}
+                        placeholder="Repeat new password"
+                        autoComplete="new-password"
+                      />
                     </div>
                   </div>
                   {passwordNotice && <div className="mt-4"><Notice type={passwordNotice.type}>{passwordNotice.text}</Notice></div>}
