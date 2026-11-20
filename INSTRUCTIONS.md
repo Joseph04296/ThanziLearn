@@ -10,7 +10,7 @@ Create a Neon project and copy the connection string.
 cd server
 copy .env.example .env      # then edit .env: paste DATABASE_URL, set JWT_SECRET
 npm install
-npm run seed                # creates tables, staff accounts and the starter course
+npm run seed                # creates tables and staff accounts
 npm run seed:courses        # adds the medication, TB and AI courses with lessons and quizzes
 npm start                   # http://localhost:5000
 ```
@@ -40,5 +40,6 @@ Learners enroll from a course page before opening lessons. Enrolled courses appe
 - Run `npm run seed` once against the production database, then `npm run seed:courses` to add the medication, TB and AI courses. Both scripts are safe to re-run: they skip users and courses that already exist. The `enrollments` table is created automatically when the API starts.
 
 ## Notes
-- The sample course is placeholder content. Have a qualified clinician review any medical content before real learners use it.
+- The sample courses are placeholder content. Have a qualified clinician review any medical content before real learners use it.
+- The public catalogue contains the medication, TB and AI courses only. If you add a course, give it one of the three original images or set an `image` path, and use the admin Hide/Show control to keep the public list tidy.
 - Left for later versions: friendlier course editor, file uploads, user role management screen, password reset, learning paths.

@@ -664,12 +664,23 @@ function PageHero({ eyebrow, title, text, image = '/images/herobg1.jpg' }) {
   );
 }
 
+// The three original course cards use these local images. Real API courses do
+// not have an image column, so match by title before falling back to the
+// original generated list for any future course without a matching image.
+const COURSE_IMAGES_BY_TITLE = {
+  'safe medication administration': '/images/medication.jpg',
+  'tb basics for frontline staff': '/images/TB.jpg',
+  'ai in healthcare: the basics': '/images/Ai+health.jpg',
+};
 const courseImages = [
-  'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=800&q=80',
+  '/images/medication.jpg',
+  '/images/TB.jpg',
+  '/images/Ai+health.jpg',
 ];
-const courseImage = c => c.image || courseImages[[...(c.title || '')].reduce((s, ch) => s + ch.charCodeAt(0), 0) % courseImages.length];
+const courseImage = c =>
+  c.image ||
+  COURSE_IMAGES_BY_TITLE[(c.title || '').trim().toLowerCase()] ||
+  courseImages[[...(c.title || '')].reduce((s, ch) => s + ch.charCodeAt(0), 0) % courseImages.length];
 
 function CourseCard({ course, to }) {
   const progress = pct(course.done || 0, course.lessons || 0);
@@ -1498,6 +1509,9 @@ function LearnerShell({ children, title, subtitle, current = 'Dashboard' }) {
 function LearnDashboard() {
   const { user } = useAuth();
   const { courses, loading, error, reload } = useEnrollments();
+  // Public catalogue is used only for inline recommendations when the learner
+  // has nothing enrolled, so they can choose a course without leaving My Learning.
+  const { courses: recommendations, loading: recsLoading, error: recsError } = useCourses({ fallback: true });
   const [params, setParams] = useSearchParams();
   const tabParam = params.get('tab');
   const tab = ['progress', 'completed', 'certificated'].includes(tabParam) ? tabParam : 'progress';
@@ -1509,10 +1523,12 @@ function LearnDashboard() {
   const certificated = courses.filter(c => c.passed);
   const unfinished = inProgress[0] || completed[0] || courses.find(c => !c.passed);
   const first = user?.name?.split(' ')[0] || 'there';
+  const showRecommendations = !loading && !error && courses.length === 0;
 
   let recommendation;
   if (loading) recommendation = 'Loading your courses…';
   else if (error) recommendation = 'We couldn’t load your courses just now. Please try again.';
+  else if (!courses.length) recommendation = 'You haven’t started a course yet. We’ve picked a few recommendations below so you can choose one without leaving this page.';
   else if (inProgress.length) {
     const c = inProgress[0];
     recommendation = c.done
@@ -1598,7 +1614,29 @@ function LearnDashboard() {
             {loading ? <Loading /> : error ? (
               <StateBox title="Couldn’t load your dashboard" text={error} action={<button className={btn} onClick={reload}>Try again</button>} />
             ) : active.items.length === 0 ? (
-              <StateBox title={active.empty} text={active.emptyText} action={<Link to="/courses" className={btn}>Browse courses</Link>} />
+              showRecommendations ? (
+                <section aria-labelledby="my-learning-recommendations">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className={eyebrowCls}>A place to start</p>
+                      <h2 id="my-learning-recommendations" className="mt-1 font-display text-lg font-semibold text-ink">Recommended for you</h2>
+                      <p className="mt-1 text-[13px] leading-6 text-body">Short, practical courses chosen for new learners. Enroll from a course page and it will appear here.</p>
+                    </div>
+                    <Link to="/courses" className={btnSoft}>See all courses <Icon name="arrow" className="h-3.5 w-3.5" /></Link>
+                  </div>
+                  {recsLoading ? <Loading label="Loading recommendations…" /> : recsError ? (
+                    <div className="mt-5"><StateBox title="Couldn’t load recommendations" text={recsError} action={<Link to="/courses" className={btn}>Browse courses</Link>} /></div>
+                  ) : recommendations.length === 0 ? (
+                    <div className="mt-5"><StateBox title="No courses available yet" text="Check back soon, or browse the course catalogue for updates." action={<Link to="/courses" className={btn}>Browse courses</Link>} /></div>
+                  ) : (
+                    <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                      {recommendations.slice(0, 3).map(c => <CourseCard key={c.id} course={c} />)}
+                    </div>
+                  )}
+                </section>
+              ) : (
+                <StateBox title={active.empty} text={active.emptyText} action={<Link to="/courses" className={btn}>Browse courses</Link>} />
+              )
             ) : active.id === 'certificated' ? (
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {active.items.map(c => (
