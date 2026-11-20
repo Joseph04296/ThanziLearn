@@ -870,34 +870,22 @@ function Preview() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [enrollOpen, setEnrollOpen] = useState(false);
-  const [notified, setNotified] = useState(false);
   const [enrollBusy, setEnrollBusy] = useState(false);
   const [enrollError, setEnrollError] = useState('');
-  const notifyKey = 'thanzi-notify:' + id;
-
-  useEffect(() => {
-    try { setNotified(localStorage.getItem(notifyKey) === '1'); } catch { setNotified(false); }
-  }, [notifyKey]);
-
-  useEffect(() => {
-    if (!enrollOpen) return;
-    const onKey = e => { if (e.key === 'Escape') setEnrollOpen(false); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [enrollOpen]);
-
-  const notifyMe = () => {
-    try { localStorage.setItem(notifyKey, '1'); } catch {}
-    setNotified(true);
-  };
 
   const enroll = async () => {
     setEnrollBusy(true);
     setEnrollError('');
     try {
-      await api('/courses/' + id + '/enroll', { method: 'POST' });
-      navigate('/learn/course/' + id);
+      let courseId = id;
+      if (course.sample) {
+        const courses = await api('/courses');
+        const match = courses.find(c => c.title.trim().toLowerCase() === course.title.trim().toLowerCase());
+        if (!match) throw new Error('This course is not available for enrollment yet.');
+        courseId = match.id;
+      }
+      await api('/courses/' + courseId + '/enroll', { method: 'POST' });
+      navigate('/learn/course/' + courseId);
     } catch (e) {
       setEnrollError(e.message);
     } finally {
@@ -908,24 +896,34 @@ function Preview() {
   useEffect(() => {
     const local = SAMPLE_COURSES.find(c => c.id === id);
     if (local) {
-      setData({
-        course: {
-          id: local.id,
-          title: local.title,
-          description: local.description,
-          category: local.category,
-          level: local.level,
-          pass_mark: local.pass_mark,
-          questions: local.questions,
-          skills: local.outcomes,
-          about: local.about,
-          image: local.image,
-          sample: true,
-        },
-        lessons: local.curriculum,
-      });
-      setError('');
-      setLoading(false);
+      const showLocalPreview = () => {
+        setData({
+          course: {
+            id: local.id,
+            title: local.title,
+            description: local.description,
+            category: local.category,
+            level: local.level,
+            pass_mark: local.pass_mark,
+            questions: local.questions,
+            skills: local.outcomes,
+            about: local.about,
+            image: local.image,
+            sample: true,
+          },
+          lessons: local.curriculum,
+        });
+        setError('');
+        setLoading(false);
+      };
+      api('/courses').then(courses => {
+        const match = courses.find(c => c.title.trim().toLowerCase() === local.title.trim().toLowerCase());
+        if (match) {
+          navigate('/courses/' + match.id, { replace: true });
+          return;
+        }
+        showLocalPreview();
+      }).catch(showLocalPreview);
       return;
     }
     setLoading(true);
@@ -940,7 +938,6 @@ function Preview() {
   const total = lessons.reduce((s, l) => s + (l.duration_min || 0), 0);
   const level = course.level || 'Beginner';
   const cta = user ? (isSample ? 'Enroll in the course' : course.enrolled ? 'Open course' : 'Enroll in the course') : 'Enroll for free';
-  const enrollsThroughPopup = user && isSample;
   const about = course.about || [
     course.description,
     'This course is delivered in short, self-paced lessons you can complete on any device. Each lesson ends with a simple knowledge check, and a final assessment confirms your understanding.',
@@ -1095,9 +1092,7 @@ function Preview() {
               </div>
               <p className="mt-2 text-[13px] leading-6 text-body">Create a free learner account to enrol, work through the lessons and earn your certificate.</p>
               {enrollError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-700">{enrollError}</p>}
-              {enrollsThroughPopup ? (
-                <button type="button" onClick={() => setEnrollOpen(true)} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></button>
-              ) : user && course.enrolled ? (
+              {user && course.enrolled ? (
                 <Link to={`/learn/course/${id}`} className={btn + ' mt-4 w-full'}>{cta} <Icon name="arrow" className="h-4 w-4" /></Link>
               ) : user ? (
                 <button type="button" onClick={enroll} disabled={enrollBusy} className={btn + ' mt-4 w-full'}>
@@ -1125,38 +1120,6 @@ function Preview() {
         </div>
       </Wrap>
 
-      {enrollOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1F33]/60 p-4"
-          onClick={() => setEnrollOpen(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="enroll-title"
-            className="w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className={eyebrowCls}>Enrolment</p>
-                <h2 id="enroll-title" className="mt-1.5 font-display text-xl font-semibold text-forest">Lessons coming soon</h2>
-              </div>
-              <button type="button" onClick={() => setEnrollOpen(false)} aria-label="Close" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-body transition hover:bg-canvas hover:text-forest">
-                <Icon name="x" className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="mt-3 text-[13px] leading-6 text-body">
-              The lessons for <span className="font-medium text-forest">{course.title}</span> haven’t been added yet. We’re preparing them now — leave your details and we’ll let you know as soon as the course opens.
-            </p>
-            {notified && <p className="mt-3 rounded-lg bg-mint px-3 py-2 text-[12px] font-medium text-lake">You’re on the list. We’ll notify you when the lessons are ready.</p>}
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <button type="button" onClick={() => setEnrollOpen(false)} className={btnSoft}>Close</button>
-              <button type="button" onClick={notifyMe} disabled={notified} className={btn}>{notified ? 'You’re on the list' : 'Notify me'}</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

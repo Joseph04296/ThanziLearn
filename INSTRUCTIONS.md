@@ -10,7 +10,8 @@ Create a Neon project and copy the connection string.
 cd server
 copy .env.example .env      # then edit .env: paste DATABASE_URL, set JWT_SECRET
 npm install
-npm run seed                # creates tables, 2 staff accounts, 1 sample course
+npm run seed                # creates tables, staff accounts and the starter course
+npm run seed:courses        # adds the medication, TB and AI courses with lessons and quizzes
 npm start                   # http://localhost:5000
 ```
 
@@ -36,7 +37,7 @@ Learners enroll from a course page before opening lessons. Enrolled courses appe
 ## 7. Deploy
 - Render (web service): root `server`, build `npm install`, start `npm start`. Env vars: DATABASE_URL, JWT_SECRET, CLIENT_URL (your Vercel URL).
 - Vercel: root `client`, env var VITE_API_URL = your Render URL.
-- Run `npm run seed` once against the production database.
+- Run `npm run seed` once against the production database, then `npm run seed:courses` to add the medication, TB and AI courses. Both scripts are safe to re-run: they skip users and courses that already exist. The `enrollments` table is created automatically when the API starts.
 
 ## Notes
 - The sample course is placeholder content. Have a qualified clinician review any medical content before real learners use it.
