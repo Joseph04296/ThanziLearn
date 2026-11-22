@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express'), cors = require('cors'), bcrypt = require('bcryptjs'), jwt = require('jsonwebtoken'), pool = require('./db');
+const { generateCertificatePdf } = require('./certificate');
 const q = (s, p) => pool.query(s, p).then(r => r.rows);
 const app = express();
 
@@ -132,6 +133,23 @@ app.post('/api/courses/:id/quiz', auth(), wrap(async (req, res) => {
   const score = Math.round(100 * right / (c.questions.length || 1)), passed = score >= c.pass_mark;
   await q('insert into attempts(user_id,course_id,score,passed) values($1,$2,$3,$4)', [req.user.id, req.params.id, score, passed]);
   res.json({ score, passed, correct: right, total: c.questions.length, pass_mark: c.pass_mark });
+}));
+app.get('/api/certificates/:id/pdf', auth(), wrap(async (req, res) => {
+  const [row] = await q(`select u.name as learner_name,c.title as course_title,
+    (select min(a.created_at) from attempts a where a.user_id=u.id and a.course_id=c.id and a.passed) as issued_at
+    from users u join courses c on c.id=$2
+    where u.id=$1 and exists (select 1 from attempts a where a.user_id=u.id and a.course_id=c.id and a.passed)`,
+  [req.user.id, req.params.id]);
+  if (!row) return res.status(403).json({ error: 'Pass the assessment for this course to unlock your certificate' });
+
+  const pdf = await generateCertificatePdf(row);
+  const slug = String(row.course_title || 'course').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="ThanziLearn-Certificate-${slug}.pdf"`,
+    'Cache-Control': 'no-store',
+  });
+  res.send(pdf);
 }));
 
 app.get('/api/admin/overview', auth(['admin', 'supervisor']), wrap(async (req, res) => {

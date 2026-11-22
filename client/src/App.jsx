@@ -1989,7 +1989,37 @@ function CertificateViewPage() {
   const [d, setD] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
   useEffect(() => { api('/courses/' + id).then(setD).catch(e => setError(e.message)).finally(() => setLoading(false)); }, [id]);
+
+  const downloadPdf = async () => {
+    setDownloading(true);
+    setDownloadError('');
+    try {
+      const r = await fetch(`${API}/api/certificates/${id}/pdf`, {
+        headers: { Authorization: 'Bearer ' + localStorage.getItem('t') },
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.error || 'Could not download the certificate');
+      }
+      const url = URL.createObjectURL(await r.blob());
+      const slug = String(d?.course?.title || 'course').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ThanziLearn-Certificate-${slug}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setDownloadError(e.message);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (loading) return <LearnerShell title="Certificate" current="Certificates"><Loading /></LearnerShell>;
   if (error) return <LearnerShell title="Certificate" current="Certificates"><StateBox title="Couldn’t load certificate" text={error} action={<Link to="/learn/certificates" className={btnSoft}>Back</Link>} /></LearnerShell>;
   if (!d?.passed) return <LearnerShell title="Certificate" current="Certificates"><StateBox title="Certificate locked" text="Pass the final assessment for this course to unlock your certificate." action={<Link to={`/learn/course/${id}`} className={btn}>Open course</Link>} /></LearnerShell>;
@@ -2009,8 +2039,12 @@ function CertificateViewPage() {
             <p className="mt-6 text-[11px] leading-5 text-muted">This certificate records course completion and is not a professional licence unless stated by the provider.</p>
           </div>
         </div>
+        {downloadError && <div className="mt-5 print:hidden"><Notice type="error">{downloadError}</Notice></div>}
         <div className="mt-5 flex flex-wrap gap-3 print:hidden">
-          <button onClick={() => window.print()} className={btn}>Print or save as PDF</button>
+          <button onClick={downloadPdf} disabled={downloading} className={btn + (downloading ? ' opacity-60' : '')}>
+            {downloading ? 'Preparing PDF…' : 'Download certificate (PDF)'}
+          </button>
+          <button onClick={() => window.print()} className={btnSoft}>Print this page</button>
           <Link to="/learn/certificates" className={btnSoft}>Back to certificates</Link>
         </div>
       </div>
