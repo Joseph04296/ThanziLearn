@@ -142,7 +142,11 @@ app.get('/api/certificates/:id/pdf', auth(), wrap(async (req, res) => {
   [req.user.id, req.params.id]);
   if (!row) return res.status(403).json({ error: 'Pass the assessment for this course to unlock your certificate' });
 
-  const pdf = await generateCertificatePdf(row);
+  const pdf = await generateCertificatePdf({
+    learnerName: row.learner_name,
+    courseTitle: row.course_title,
+    issuedAt: row.issued_at,
+  });
   const slug = String(row.course_title || 'course').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   res.set({
     'Content-Type': 'application/pdf',
