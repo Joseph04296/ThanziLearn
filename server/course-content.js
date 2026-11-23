@@ -116,7 +116,7 @@ const safeMedication = {
         q: 'Which of the following is an example of a medication administration error?',
         options: ["Checking a patient's identity before administration", 'Administering medication to the wrong patient', 'Documenting medication administration correctly', 'Confirming a medication allergy'],
         answer: 1,
-        explain: 'Giving medicine to the wrong patient is a administration error; the other options are safety checks.',
+        explain: 'Giving medicine to the wrong patient is an administration error; the other options are safety checks.',
       },
     }),
     moduleBlock({
