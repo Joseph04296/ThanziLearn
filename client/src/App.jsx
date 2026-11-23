@@ -1922,6 +1922,7 @@ function CoursePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [enrollRequired, setEnrollRequired] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   const load = async (reset = false) => {
     try {
@@ -1969,6 +1970,29 @@ function CoursePage() {
   const moduleNumber = current?.type === 'module'
     ? blocks.slice(0, index + 1).filter(b => b.type === 'module').length : 0;
 
+  const courseNav = (mobile = false) => (
+    <nav className={mobile ? 'grid gap-1.5' : 'space-y-1.5 p-3'} aria-label={mobile ? 'Course sections (mobile)' : 'Course sections'}>
+      {blocks.map((b, i) => {
+        const active = current?.id === b.id;
+        const locked = b.type === 'assessment' && !allDone;
+        const doneMark = b.complete || (b.type === 'completion' && passed);
+        const num = b.type === 'module' ? blocks.slice(0, i + 1).filter(x => x.type === 'module').length : null;
+        return (
+          <button key={b.id} type="button" onClick={() => { setView(b.id); setError(''); setNavOpen(false); }}
+            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] leading-5 transition ${active ? 'bg-lake text-white' : 'text-body hover:bg-mist hover:text-forest'}`}>
+            <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md text-[10px] font-semibold ${active ? 'bg-white/20 text-white' : doneMark ? 'bg-mint text-lake' : 'bg-mist text-muted'}`}>
+              {doneMark ? <Icon name="check" className="h-3 w-3" /> : locked ? '·' : num ?? (b.type === 'intro' ? 'i' : b.type === 'assessment' ? '?' : '★')}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className={`block font-medium ${active ? 'text-white' : 'text-ink'}`}>{b.title}</span>
+              {b.subtitle && <span className={`mt-0.5 block text-[11px] ${active ? 'text-white/75' : 'text-muted'}`}>{b.subtitle}</span>}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
   const completeModule = async block => {
     const pending = block.lessonIds.filter(lid => !done.includes(lid));
     if (pending.length) {
@@ -2012,95 +2036,91 @@ function CoursePage() {
   }
 
   return (
-    <Wrap>
-      <div className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
-        <aside className="min-w-0">
-          <div className="overflow-hidden rounded-xl border border-border bg-white lg:sticky lg:top-24">
-            <div className="border-b border-border p-5">
-              <DashboardBrand />
-              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Course</p>
-              <h2 className="mt-1 font-display text-[15px] font-semibold leading-snug text-ink">{course.title}</h2>
-              {course.durationLabel && <p className="mt-1 text-[11px] leading-4 text-muted">{course.durationLabel}</p>}
-              <div className="mt-4">
-                <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-body"><span>Your progress</span><span>{progress}%</span></div>
-                <div className="h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-lake transition-all" style={{ width: `${progress}%` }} /></div>
-              </div>
+    <div className="min-h-screen bg-mist text-ink">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-white lg:sticky lg:top-0 lg:flex lg:h-screen">
+          <div className="border-b border-border p-5">
+            <DashboardBrand />
+            <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Course</p>
+            <h2 className="mt-1 font-display text-[15px] font-semibold leading-snug text-ink">{course.title}</h2>
+            {course.durationLabel && <p className="mt-1 text-[11px] leading-4 text-muted">{course.durationLabel}</p>}
+            <div className="mt-4">
+              <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-body"><span>Your progress</span><span>{progress}%</span></div>
+              <div className="h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-lake transition-all" style={{ width: `${progress}%` }} /></div>
             </div>
-            <nav className="p-3" aria-label="Course sections">
-              {blocks.map((b, i) => {
-                const active = current?.id === b.id;
-                const locked = b.type === 'assessment' && !allDone;
-                const doneMark = b.complete || (b.type === 'completion' && passed);
-                const num = b.type === 'module' ? blocks.slice(0, i + 1).filter(x => x.type === 'module').length : null;
-                return (
-                  <button key={b.id} type="button" onClick={() => { setView(b.id); setError(''); }}
-                    className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] leading-5 transition ${active ? 'bg-lake text-white' : 'text-body hover:bg-mist hover:text-forest'}`}>
-                    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md text-[10px] font-semibold ${active ? 'bg-white/20 text-white' : doneMark ? 'bg-mint text-lake' : 'bg-mist text-muted'}`}>
-                      {doneMark ? <Icon name="check" className="h-3 w-3" /> : locked ? '·' : num ?? (b.type === 'intro' ? 'i' : b.type === 'assessment' ? '?' : '★')}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className={`block font-medium ${active ? 'text-white' : 'text-ink'}`}>{b.title}</span>
-                      {b.subtitle && <span className={`mt-0.5 block text-[11px] ${active ? 'text-white/75' : 'text-muted'}`}>{b.subtitle}</span>}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-            <div className="border-t border-border p-3">
-              <Link to="/learn" className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-body transition hover:bg-mist hover:text-forest">
-                <Icon name="arrow" className="h-4 w-4 rotate-180" /> Back to my learning
-              </Link>
-            </div>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">{courseNav()}</div>
+          <div className="mt-auto border-t border-border p-3">
+            <Link to="/learn" className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-body transition hover:bg-mist hover:text-forest">
+              <Icon name="arrow" className="h-4 w-4 rotate-180" /> Back to my learning
+            </Link>
           </div>
         </aside>
 
-        <main className="min-w-0">
-          {error && <div className="mb-4"><Notice type="error">{error}</Notice></div>}
-          <div className="overflow-hidden rounded-xl border border-border bg-white">
-            <header className="border-b border-border bg-mist/60 px-6 py-6 sm:px-8">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-lake">
-                    {current.type === 'intro' ? 'Getting started' : current.type === 'module' ? `Module ${moduleNumber} of ${moduleCount}` : current.type === 'assessment' ? 'Final assessment' : 'Course complete'}
-                  </p>
-                  <h1 className="mt-1.5 font-display text-[1.55rem] font-semibold leading-tight text-ink sm:text-[1.85rem]">{current.title}</h1>
-                  {current.subtitle && <p className="mt-1 text-[13px] text-body">{current.subtitle}</p>}
-                </div>
-                {current.duration && <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-[12px] text-body"><Icon name="clock" className="h-3.5 w-3.5 text-muted" />{current.duration}</span>}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="border-b border-border bg-white px-4 py-3.5 md:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="lg:hidden"><DashboardBrand /></div>
+                <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Course</div>
+                <h2 className="truncate font-display text-xl font-semibold">{course.title}</h2>
               </div>
-            </header>
-            <div className="px-6 py-7 sm:px-8 sm:py-9">
-              {current.type === 'assessment' ? (
-                <DashAssessment course={course} allDone={allDone} answers={answers} setAnswers={setAnswers} result={result} submitQuiz={submitQuiz} busy={busy} passed={passed} id={id}
-                  onBack={() => setView(blocks.filter(b => b.type === 'module').pop()?.id || 'intro')}
-                  onRetry={() => { setResult(null); setAnswers([]); setError(''); }} />
-              ) : current.type === 'completion' ? (
-                <DashCompletion result={result} passed={passed} id={id} />
-              ) : (
-                <>
-                  <DashImage image={current.image} />
-                  {(current.sections || []).map((s, i) => <DashSection key={i} section={s} />)}
-                  <DashInfographic info={current.infographic} />
-                  <DashNotice notice={current.notice} />
-                  {current.takeaway && <DashTakeaway text={current.takeaway} />}
-                  {current.knowledgeCheck && <DashKnowledgeCheck check={current.knowledgeCheck} value={checks[current.id]} onChange={k => setChecks(s => ({ ...s, [current.id]: k }))} />}
-                  <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
-                    <button type="button" onClick={() => setView(previous.id)} disabled={!previous} className={btnSoft + ' disabled:opacity-50'}>Previous</button>
-                    {current.type === 'module' ? (
-                      <button type="button" onClick={() => completeModule(current)} disabled={busy} className={btn}>
-                        {busy ? 'Saving…' : current.complete ? (next ? 'Next section' : 'Go to assessment') : 'Mark module complete & continue'}
-                      </button>
-                    ) : next ? (
-                      <button type="button" onClick={() => setView(next.id)} className={btn}>{next.type === 'assessment' ? 'Go to final assessment' : `Start ${next.title.replace('Module ', 'Module ')}`}</button>
-                    ) : null}
-                  </div>
-                </>
-              )}
+              <div className="flex items-center gap-2">
+                <button onClick={() => setNavOpen(v => !v)} className="rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium lg:hidden" aria-expanded={navOpen} aria-controls="course-nav">{navOpen ? 'Close' : 'Modules'}</button>
+                <Link to="/learn" className="hidden rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium sm:inline-flex">My learning</Link>
+              </div>
             </div>
-          </div>
-        </main>
+            {navOpen && <div id="course-nav" className="mt-3 lg:hidden">{courseNav(true)}</div>}
+          </header>
+
+          <main className="flex-1 px-4 py-6 md:px-6 md:py-8">
+            {error && <div className="mb-4"><Notice type="error">{error}</Notice></div>}
+            <div className="overflow-hidden rounded-xl border border-border bg-white">
+              <div className="border-b border-border bg-mist/60 px-6 py-6 sm:px-8">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-lake">
+                      {current.type === 'intro' ? 'Getting started' : current.type === 'module' ? `Module ${moduleNumber} of ${moduleCount}` : current.type === 'assessment' ? 'Final assessment' : 'Course complete'}
+                    </p>
+                    <h1 className="mt-1.5 font-display text-[1.55rem] font-semibold leading-tight text-ink sm:text-[1.85rem]">{current.title}</h1>
+                    {current.subtitle && <p className="mt-1 text-[13px] text-body">{current.subtitle}</p>}
+                  </div>
+                  {current.duration && <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-[12px] text-body"><Icon name="clock" className="h-3.5 w-3.5 text-muted" />{current.duration}</span>}
+                </div>
+              </div>
+              <div className="px-6 py-7 sm:px-8 sm:py-9">
+                {current.type === 'assessment' ? (
+                  <DashAssessment course={course} allDone={allDone} answers={answers} setAnswers={setAnswers} result={result} submitQuiz={submitQuiz} busy={busy} passed={passed} id={id}
+                    onBack={() => setView(blocks.filter(b => b.type === 'module').pop()?.id || 'intro')}
+                    onRetry={() => { setResult(null); setAnswers([]); setError(''); }} />
+                ) : current.type === 'completion' ? (
+                  <DashCompletion result={result} passed={passed} id={id} />
+                ) : (
+                  <>
+                    <DashImage image={current.image} />
+                    {(current.sections || []).map((s, i) => <DashSection key={i} section={s} />)}
+                    <DashInfographic info={current.infographic} />
+                    <DashNotice notice={current.notice} />
+                    {current.takeaway && <DashTakeaway text={current.takeaway} />}
+                    {current.knowledgeCheck && <DashKnowledgeCheck check={current.knowledgeCheck} value={checks[current.id]} onChange={k => setChecks(s => ({ ...s, [current.id]: k }))} />}
+                    <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+                      <button type="button" onClick={() => setView(previous.id)} disabled={!previous} className={btnSoft + ' disabled:opacity-50'}>Previous</button>
+                      {current.type === 'module' ? (
+                        <button type="button" onClick={() => completeModule(current)} disabled={busy} className={btn}>
+                          {busy ? 'Saving…' : current.complete ? (next ? 'Next section' : 'Go to assessment') : 'Mark module complete & continue'}
+                        </button>
+                      ) : next ? (
+                        <button type="button" onClick={() => setView(next.id)} className={btn}>{next.type === 'assessment' ? 'Go to final assessment' : `Start ${next.title.replace('Module ', 'Module ')}`}</button>
+                      ) : null}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
-    </Wrap>
+    </div>
   );
 }
 
