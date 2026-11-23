@@ -44,6 +44,7 @@ const Icon = ({ name, className = 'h-5 w-5' }) => {
   if (name === 'menu') return <svg {...p}><path d="M4 7h16M4 12h16M4 17h16"/></svg>;
   if (name === 'x') return <svg {...p}><path d="M6 6l12 12M18 6 6 18"/></svg>;
   if (name === 'layers') return <svg {...p}><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg>;
+  if (name === 'lock') return <svg {...p}><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>;
   if (name === 'globe') return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>;
   if (name === 'bell') return <svg {...p}><path d="M18 8a6 6 0 1 0-12 0c0 6-3 7-3 7h18s-3-1-3-7"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>;
   if (name === 'chevron') return <svg {...p}><path d="m6 9 6 6 6-6"/></svg>;
@@ -1974,18 +1975,25 @@ function CoursePage() {
     <nav className={mobile ? 'grid gap-1.5' : 'space-y-1.5 p-3'} aria-label={mobile ? 'Course sections (mobile)' : 'Course sections'}>
       {blocks.map((b, i) => {
         const active = current?.id === b.id;
-        const locked = b.type === 'assessment' && !allDone;
+        const locked = (b.type === 'assessment' && !allDone) || (b.type === 'completion' && !passed);
         const doneMark = b.complete || (b.type === 'completion' && passed);
         const num = b.type === 'module' ? blocks.slice(0, i + 1).filter(x => x.type === 'module').length : null;
+        const rowCls = locked ? 'cursor-default' : active ? 'bg-lake text-white' : 'text-body hover:bg-mist hover:text-forest';
+        const iconCls = locked ? 'bg-ink/5 text-muted' : active ? 'bg-white/20 text-white' : doneMark ? 'bg-mint text-lake' : b.type === 'assessment' ? 'bg-mint/70 text-lake' : 'bg-mist text-body';
+        const titleCls = locked ? 'text-ink/40' : active ? 'text-white' : 'text-ink';
+        const subCls = locked ? 'text-ink/35' : active ? 'text-white/75' : 'text-muted';
+        const glyph = locked ? <Icon name="lock" className="h-3 w-3" />
+          : doneMark ? <Icon name="check" className="h-3 w-3" />
+          : num ?? (b.type === 'intro' ? 'i' : b.type === 'assessment' ? '?' : '★');
         return (
-          <button key={b.id} type="button" onClick={() => { setView(b.id); setError(''); setNavOpen(false); }}
-            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] leading-5 transition ${active ? 'bg-lake text-white' : 'text-body hover:bg-mist hover:text-forest'}`}>
-            <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md text-[10px] font-semibold ${active ? 'bg-white/20 text-white' : doneMark ? 'bg-mint text-lake' : 'bg-mist text-muted'}`}>
-              {doneMark ? <Icon name="check" className="h-3 w-3" /> : locked ? '·' : num ?? (b.type === 'intro' ? 'i' : b.type === 'assessment' ? '?' : '★')}
+          <button key={b.id} type="button" onClick={() => { setView(b.id); setError(''); setNavOpen(false); }} aria-disabled={locked}
+            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] leading-5 transition ${rowCls}`}>
+            <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md text-[10px] font-semibold ${iconCls}`}>
+              {glyph}
             </span>
             <span className="min-w-0 flex-1">
-              <span className={`block font-medium ${active ? 'text-white' : 'text-ink'}`}>{b.title}</span>
-              {b.subtitle && <span className={`mt-0.5 block text-[11px] ${active ? 'text-white/75' : 'text-muted'}`}>{b.subtitle}</span>}
+              <span className={`block font-medium ${titleCls}`}>{b.title}</span>
+              {b.subtitle && <span className={`mt-0.5 block text-[11px] ${subCls}`}>{b.subtitle}</span>}
             </span>
           </button>
         );
