@@ -1684,23 +1684,263 @@ function LearnCoursesPage() {
   );
 }
 
+// Small building blocks for the structured course dashboard.
+function DashboardBrand() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-lake text-white">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6l-7-3z" /><path d="m9 12 2 2 4-4" />
+        </svg>
+      </span>
+      <span className="font-display text-lg font-semibold tracking-[-0.02em] text-lake">ThanziLearn</span>
+    </div>
+  );
+}
+
+function DashSection({ section }) {
+  return (
+    <div className="mt-8 first:mt-0">
+      <h3 className="font-display text-[17px] font-semibold text-ink">{section.title}</h3>
+      <div className="mt-2 whitespace-pre-line text-[15px] leading-8 text-body">{section.body}</div>
+      {!!section.bullets?.length && (
+        <ul className="mt-3 space-y-2">
+          {section.bullets.map((b, i) => (
+            <li key={i} className="flex gap-2.5 text-[15px] leading-7 text-body">
+              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lake" />
+              <span>{String(b).replace(/^•\s*/, '')}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function DashImage({ image }) {
+  if (!image?.src) return null;
+  return (
+    <figure className="mb-8 overflow-hidden rounded-xl border border-border">
+      <img src={image.src} alt={image.alt || ''} loading="lazy" className="max-h-80 w-full object-cover" />
+      {image.caption && <figcaption className="border-t border-border bg-mist px-4 py-3 text-[12px] leading-5 text-body">{image.caption}</figcaption>}
+    </figure>
+  );
+}
+
+function DashInfographic({ info }) {
+  if (!info?.items?.length) return null;
+  return (
+    <div className="mt-8 rounded-xl border border-lake/20 bg-mint p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-lake">{info.title}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {info.items.map((item, i) => (
+          <span key={i} className="flex items-center gap-2">
+            <span className="rounded-lg border border-lake/20 bg-white px-3 py-2 text-[13px] font-medium text-ink">{item}</span>
+            {i < info.items.length - 1 && <Icon name="arrow" className="h-4 w-4 text-lake/60" />}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DashTakeaway({ text }) {
+  return (
+    <div className="mt-8 flex gap-3 rounded-xl border border-lake/20 bg-[#EAF1FC] p-5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-lake text-white"><Icon name="check" className="h-4 w-4" /></span>
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-lake">Key takeaway</p>
+        <p className="mt-1 text-[15px] font-medium leading-7 text-ink">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function DashNotice({ notice }) {
+  if (!notice) return null;
+  return (
+    <div className="mt-8 rounded-xl border border-sun/40 bg-[#fff8e8] p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/70">Important notice</p>
+      <p className="mt-1 text-[14px] leading-7 text-body">{notice}</p>
+    </div>
+  );
+}
+
+function DashKnowledgeCheck({ check, value, onChange }) {
+  const answered = value !== undefined && value !== null;
+  const right = answered && value === check.answer;
+  return (
+    <div className="mt-8 rounded-xl border border-border bg-mist p-5 sm:p-6">
+      <div className="flex items-center gap-2">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-lake/10 text-lake"><Icon name="shield" className="h-4 w-4" /></span>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-lake">Knowledge check</p>
+      </div>
+      <p className="mt-3 font-display text-base font-semibold text-ink">{check.q}</p>
+      <div className="mt-4 space-y-2">
+        {check.options.map((opt, k) => {
+          const state = answered ? (k === check.answer ? 'correct' : k === value ? 'wrong' : '') : '';
+          return (
+            <button key={k} type="button" onClick={() => onChange(k)} disabled={answered}
+              className={`flex w-full items-center gap-3 rounded-lg border px-3.5 py-2.5 text-left text-[14px] transition ${state === 'correct' ? 'border-lake bg-white text-forest' : state === 'wrong' ? 'border-red-300 bg-red-50 text-red-700' : 'border-border bg-white text-body hover:border-lake/40'}`}>
+              <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold ${state === 'correct' ? 'border-lake bg-lake text-white' : state === 'wrong' ? 'border-red-400 bg-red-400 text-white' : 'border-border text-muted'}`}>{String.fromCharCode(65 + k)}</span>
+              <span>{opt}</span>
+            </button>
+          );
+        })}
+      </div>
+      {answered && (
+        <div className={`mt-4 rounded-lg p-4 text-[13px] leading-6 ${right ? 'bg-mint text-ink' : 'bg-red-50 text-red-700'}`}>
+          <p className="font-semibold">{right ? 'Correct.' : 'Not quite.'}</p>
+          {check.explain && <p className="mt-1">{check.explain}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DashAssessment({ course, allDone, answers, setAnswers, result, submitQuiz, busy, passed, id, onBack, onRetry }) {
+  if (!allDone) return <StateBox title="Assessment locked" text="Complete all five modules to unlock the final assessment." action={<button onClick={onBack} className={btnSoft}>Back to modules</button>} />;
+  if (result) {
+    const weak = (result.breakdown || []).filter(x => !x.correct);
+    return (
+      <div>
+        <div className={`rounded-xl p-6 ${result.passed ? 'bg-mint' : 'bg-[#fff7e8]'}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/70">Your result</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink">{result.passed ? 'You passed' : 'Not passed yet'}</h2>
+          <div className="mt-2 font-display text-5xl font-semibold text-lake">{result.score}%</div>
+          <p className="mt-2 text-[13px] text-body">{result.correct} of {result.total} correct · Pass mark {result.pass_mark}%</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {result.passed ? <Link to={`/learn/certificates/${id}`} className={btn}>View certificate</Link> : <button onClick={onRetry} className={btn}>Try again</button>}
+            <button onClick={onBack} className={btnSoft}>Review modules</button>
+          </div>
+        </div>
+        {!!weak.length && (
+          <div className="mt-7">
+            <h3 className="font-display text-base font-semibold text-ink">Questions to review</h3>
+            <div className="mt-3 space-y-3">
+              {weak.map((x, i) => (
+                <div key={i} className="rounded-xl border border-border bg-mist p-4">
+                  <p className="text-[14px] font-medium text-ink">{i + 1}. {x.q}</p>
+                  <p className="mt-2 text-[13px] leading-6 text-body">Correct answer: <span className="font-medium text-forest">{x.answerText}</span></p>
+                  {x.explain && <p className="mt-1 text-[13px] leading-6 text-body">{x.explain}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {passed && !result.passed && <p className="mt-5 text-[13px] text-body">You have already passed this course. <Link to={`/learn/certificates/${id}`} className="font-medium text-lake hover:underline">View your certificate</Link>.</p>}
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p className="text-[14px] leading-7 text-body">Answer all {course.questions.length} questions. You need {course.pass_mark}% to pass. You can review the modules at any time before submitting.</p>
+      <div className="mt-6 space-y-5">
+        {course.questions.map((qu, n) => (
+          <fieldset key={n} className="rounded-xl border border-border bg-mist p-4">
+            <legend className="mb-3 px-1 text-[13px] font-medium text-forest">{n + 1}. {qu.q}</legend>
+            <div className="space-y-2">
+              {qu.options.map((opt, k) => (
+                <label key={k} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[13px] ${answers[n] === k ? 'border-lake bg-white text-forest' : 'border-border bg-white/70 text-body hover:border-lake/40'}`}>
+                  <input type="radio" name={`q-${n}`} checked={answers[n] === k} onChange={() => { const next = [...answers]; next[n] = k; setAnswers(next); }} />
+                  <span>{opt}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+      </div>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button onClick={submitQuiz} disabled={busy} className={btn}>{busy ? 'Submitting…' : 'Submit assessment'}</button>
+        <button onClick={onBack} className={btnSoft}>Review modules</button>
+      </div>
+      {passed && <p className="mt-4 text-[13px] text-body">You have already passed this course. <Link to={`/learn/certificates/${id}`} className="font-medium text-lake hover:underline">View your certificate</Link>.</p>}
+    </div>
+  );
+}
+
+function DashCompletion({ result, passed, id }) {
+  const ok = passed || result?.passed;
+  return (
+    <div>
+      <div className={`rounded-xl p-6 ${ok ? 'bg-mint' : 'bg-[#fff7e8]'}`}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/70">Completion</p>
+        <h2 className="mt-1 font-display text-xl font-semibold text-ink">{ok ? 'You’re qualified for your certificate' : 'Finish your assessment to complete this course'}</h2>
+        {result && <p className="mt-2 text-[14px] text-body">{result.correct} of {result.total} correct · {result.score}% · Pass mark {result.pass_mark}%</p>}
+        <p className="mt-3 text-[14px] leading-7 text-body">
+          {ok
+            ? 'Your result has been recorded. Download your personalised certificate, or print this page for your records.'
+            : 'Review the modules where you had difficulty, then retake the final assessment. There is no limit on attempts.'}
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          {ok && <Link to={`/learn/certificates/${id}`} className={btn}>View certificate</Link>}
+          <Link to="/learn" className={btnSoft}>Back to my learning</Link>
+        </div>
+      </div>
+      {ok && (
+        <div className="mt-7 grid gap-4 sm:grid-cols-3">
+          {[
+            ['Result', result ? `${result.score}%` : 'Passed'],
+            ['Feedback', result ? `${result.correct}/${result.total} correct` : 'Available'],
+            ['Certificate', 'Ready to download'],
+          ].map(([k, v]) => (
+            <div key={k} className="rounded-xl border border-border bg-white p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{k}</p>
+              <p className="mt-1 font-display text-base font-semibold text-ink">{v}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Pairs each structured module with the flattened lesson rows that track its
+// progress. Lesson order follows module section order, so IDs stay stable.
+function buildDashboardBlocks(course, lessons, done) {
+  let cursor = 0;
+  return (course.modules || []).map(b => {
+    if (b.type !== 'module') return { ...b, lessonIds: [], complete: false };
+    const blockLessons = lessons.slice(cursor, cursor + (b.sections || []).length);
+    cursor += (b.sections || []).length;
+    return {
+      ...b,
+      lessonIds: blockLessons.map(l => l.id),
+      complete: blockLessons.length > 0 && blockLessons.every(l => done.includes(l.id)),
+    };
+  });
+}
+
 function CoursePage() {
   const { id } = useParams();
   const [d, setD] = useState(null);
-  const [idx, setIdx] = useState(0);
+  const [view, setView] = useState('intro');
   const [answers, setAnswers] = useState([]);
   const [result, setResult] = useState(null);
+  const [checks, setChecks] = useState({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [enrollRequired, setEnrollRequired] = useState(false);
-  const load = async (keepIdx = true) => {
+
+  const load = async (reset = false) => {
     try {
       const data = await api('/courses/' + id);
       setD(data);
       setError('');
       setEnrollRequired(false);
-      if (!keepIdx) setIdx(0);
+      if (reset) {
+        const blocks = buildDashboardBlocks(data.course, data.lessons, data.done);
+        let target = 'intro';
+        for (const b of blocks) {
+          if (b.type === 'module' && !b.complete) { target = b.id; break; }
+          if (b.type === 'assessment') target = 'assessment';
+        }
+        setView(target);
+        setResult(null);
+        setAnswers([]);
+        setChecks({});
+      }
     } catch (e) {
       setError(e.message);
       setEnrollRequired(e.status === 403);
@@ -1708,27 +1948,39 @@ function CoursePage() {
       setLoading(false);
     }
   };
-  useEffect(() => { setLoading(true); load(false); }, [id]);
+  useEffect(() => { setLoading(true); load(true); }, [id]);
+
   if (loading) return <Wrap><Loading label="Loading course…" /></Wrap>;
   if (error || !d) return <Wrap><StateBox
     title={enrollRequired ? 'Enroll to start learning' : 'Couldn’t open course'}
     text={enrollRequired ? 'Enroll in this course before opening its lessons.' : error || 'Course not found.'}
     action={<Link to={enrollRequired ? `/courses/${id}` : '/learn'} className={btnSoft}>{enrollRequired ? 'View course' : 'Back to dashboard'}</Link>}
   /></Wrap>;
+
   const { course, lessons, done, passed } = d;
-  const progress = pct(done.length, lessons.length);
+  const blocks = buildDashboardBlocks(course, lessons, done);
   const allDone = lessons.length > 0 && done.length === lessons.length;
-  const inQuiz = idx < 0;
-  const lesson = lessons[idx];
-  const complete = async () => {
-    if (!lesson) return;
-    setBusy(true);
-    try {
-      await api('/lessons/' + lesson.id + '/complete', { method: 'POST' });
-      const nextIdx = idx < lessons.length - 1 ? idx + 1 : -1;
-      await load();
-      setIdx(nextIdx);
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
+  const progress = pct(done.length, lessons.length);
+  const moduleCount = blocks.filter(b => b.type === 'module').length;
+  const index = Math.max(0, blocks.findIndex(b => b.id === view));
+  const current = blocks[index] || blocks[0];
+  const next = blocks[index + 1];
+  const previous = blocks[index - 1];
+  const moduleNumber = current?.type === 'module'
+    ? blocks.slice(0, index + 1).filter(b => b.type === 'module').length : 0;
+
+  const completeModule = async block => {
+    const pending = block.lessonIds.filter(lid => !done.includes(lid));
+    if (pending.length) {
+      setBusy(true);
+      try {
+        await Promise.all(pending.map(lid => api('/lessons/' + lid + '/complete', { method: 'POST' })));
+        await load();
+      } catch (e) { setError(e.message); setBusy(false); return; }
+      setBusy(false);
+    }
+    const i = blocks.findIndex(b => b.id === block.id);
+    if (blocks[i + 1]) { setView(blocks[i + 1].id); setError(''); }
   };
   const submitQuiz = async () => {
     if (answers.filter(a => a !== undefined).length < course.questions.length) { setError('Please answer all questions before submitting.'); return; }
@@ -1736,88 +1988,117 @@ function CoursePage() {
     try { setResult(await api('/courses/' + id + '/quiz', { method: 'POST', body: { answers } })); await load(); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
-  return (
-    <Wrap>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Course</p>
+
+  // Legacy courses without structured modules still open in the simple view.
+  if (!blocks.length) {
+    return (
+      <Wrap>
+        <div className={card}>
+          <p className="eyebrowCls">Course</p>
           <h1 className="mt-1 font-display text-2xl font-semibold">{course.title}</h1>
           <p className="mt-1 text-[13px] text-body">{lessons.length} lessons · Pass mark {course.pass_mark}%</p>
+          <div className="mt-5 space-y-2">
+            {lessons.map((l, n) => (
+              <div key={l.id} className="rounded-lg border border-border bg-mist p-4">
+                <p className="text-[13px] font-medium text-ink">{n + 1}. {l.title}</p>
+                <div className="mt-2 whitespace-pre-line text-[14px] leading-7 text-body">{l.body}</div>
+                {done.includes(l.id) && <p className="mt-2 text-[12px] text-lake">✓ Completed</p>}
+              </div>
+            ))}
+          </div>
         </div>
-        <Link to="/learn" className={btnSoft}>Back to my learning</Link>
-      </div>
-      <div className="mb-6">
-        <div className="mb-2 flex items-center justify-between text-sm text-ink/70"><span>Progress</span><span>{progress}%</span></div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-lake" style={{ width: `${progress}%` }} /></div>
-      </div>
-      {error && <div className="mb-4"><Notice type="error">{error}</Notice></div>}
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className={card + ' h-fit space-y-2 lg:sticky lg:top-24'}>
-          <div className="mb-2 font-semibold text-ink">Lessons</div>
-          {lessons.map((l, n) => (
-            <button key={l.id} onClick={() => { setIdx(n); setResult(null); }} className={`w-full rounded-lg px-3 py-2 text-left text-[13px] transition ${n === idx ? 'bg-lake text-white' : 'bg-mist text-body hover:bg-mint hover:text-forest'}`}>
-              <span className="mr-2 inline-block w-4">{done.includes(l.id) ? '✓' : n + 1 + '.'}</span>{l.title}
-            </button>
-          ))}
-          <button disabled={!allDone} onClick={() => { setIdx(-1); setError(''); }} className={`w-full rounded-lg px-3 py-2 text-left text-[13px] transition disabled:cursor-not-allowed disabled:opacity-50 ${inQuiz ? 'bg-lake text-white' : 'bg-mist text-body hover:bg-mint hover:text-forest'}`}>Final assessment</button>
-          {!allDone && <p className="pt-1 text-[11px] text-muted">Complete all lessons to unlock the assessment.</p>}
+      </Wrap>
+    );
+  }
+
+  return (
+    <Wrap>
+      <div className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
+        <aside className="min-w-0">
+          <div className="overflow-hidden rounded-xl border border-border bg-white lg:sticky lg:top-24">
+            <div className="border-b border-border p-5">
+              <DashboardBrand />
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Course</p>
+              <h2 className="mt-1 font-display text-[15px] font-semibold leading-snug text-ink">{course.title}</h2>
+              {course.durationLabel && <p className="mt-1 text-[11px] leading-4 text-muted">{course.durationLabel}</p>}
+              <div className="mt-4">
+                <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-body"><span>Your progress</span><span>{progress}%</span></div>
+                <div className="h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-lake transition-all" style={{ width: `${progress}%` }} /></div>
+              </div>
+            </div>
+            <nav className="p-3" aria-label="Course sections">
+              {blocks.map((b, i) => {
+                const active = current?.id === b.id;
+                const locked = b.type === 'assessment' && !allDone;
+                const doneMark = b.complete || (b.type === 'completion' && passed);
+                const num = b.type === 'module' ? blocks.slice(0, i + 1).filter(x => x.type === 'module').length : null;
+                return (
+                  <button key={b.id} type="button" onClick={() => { setView(b.id); setError(''); }}
+                    className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] leading-5 transition ${active ? 'bg-lake text-white' : 'text-body hover:bg-mist hover:text-forest'}`}>
+                    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md text-[10px] font-semibold ${active ? 'bg-white/20 text-white' : doneMark ? 'bg-mint text-lake' : 'bg-mist text-muted'}`}>
+                      {doneMark ? <Icon name="check" className="h-3 w-3" /> : locked ? '·' : num ?? (b.type === 'intro' ? 'i' : b.type === 'assessment' ? '?' : '★')}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block font-medium ${active ? 'text-white' : 'text-ink'}`}>{b.title}</span>
+                      {b.subtitle && <span className={`mt-0.5 block text-[11px] ${active ? 'text-white/75' : 'text-muted'}`}>{b.subtitle}</span>}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="border-t border-border p-3">
+              <Link to="/learn" className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-body transition hover:bg-mist hover:text-forest">
+                <Icon name="arrow" className="h-4 w-4 rotate-180" /> Back to my learning
+              </Link>
+            </div>
+          </div>
         </aside>
-        <section className={card + ' md:p-8'}>
-          {!inQuiz ? (
-            lesson ? (
-              <>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Lesson {idx + 1} of {lessons.length} · {lesson.duration_min || 5} min</p>
-                <h2 className="mt-1.5 font-display text-2xl font-semibold">{lesson.title}</h2>
-                {lesson.video_url && <div className="mt-5 overflow-hidden rounded-xl border border-border"><iframe src={lesson.video_url} className="aspect-video w-full" allowFullScreen title={lesson.title} /></div>}
-                <div className="mt-5 whitespace-pre-line text-[15px] leading-8 text-body">{lesson.body || 'Lesson content will appear here.'}</div>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <button onClick={() => setIdx(Math.max(0, idx - 1))} disabled={idx === 0} className={btnSoft + ' disabled:opacity-50'}>Previous</button>
-                  <button onClick={complete} disabled={busy} className={btn}>{busy ? 'Saving…' : done.includes(lesson.id) ? (idx < lessons.length - 1 ? 'Next lesson' : 'Go to assessment') : 'Mark complete & continue'}</button>
+
+        <main className="min-w-0">
+          {error && <div className="mb-4"><Notice type="error">{error}</Notice></div>}
+          <div className="overflow-hidden rounded-xl border border-border bg-white">
+            <header className="border-b border-border bg-mist/60 px-6 py-6 sm:px-8">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-lake">
+                    {current.type === 'intro' ? 'Getting started' : current.type === 'module' ? `Module ${moduleNumber} of ${moduleCount}` : current.type === 'assessment' ? 'Final assessment' : 'Course complete'}
+                  </p>
+                  <h1 className="mt-1.5 font-display text-[1.55rem] font-semibold leading-tight text-ink sm:text-[1.85rem]">{current.title}</h1>
+                  {current.subtitle && <p className="mt-1 text-[13px] text-body">{current.subtitle}</p>}
                 </div>
-              </>
-            ) : <StateBox title="No lessons yet" text="This course doesn’t have any lessons." />
-          ) : (
-            <>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Final assessment</p>
-              <h2 className="mt-1.5 font-display text-2xl font-semibold">Check your understanding</h2>
-              <p className="mt-2 text-[13px] text-body">Answer all {course.questions.length} questions. You need {course.pass_mark}% to pass.</p>
-              {result ? (
-                <div className={`mt-6 rounded-xl p-6 ${result.passed ? 'bg-mint' : 'bg-[#fff7e8]'}`}>
-                  <div className="font-display text-lg font-semibold">{result.passed ? 'You passed' : 'Not passed yet'}</div>
-                  <div className="mt-1 font-display text-4xl font-semibold text-lake">{result.score}%</div>
-                  <p className="mt-2 text-[13px] text-body">{result.correct} of {result.total} correct · Pass mark {result.pass_mark}%</p>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    {result.passed ? <Link to={`/learn/certificates/${id}`} className={btn}>View certificate</Link> : <button onClick={() => { setResult(null); setAnswers([]); setIdx(0); setError(''); }} className={btn}>Review lessons & try again</button>}
-                    <Link to="/learn" className={btnSoft}>Back to my learning</Link>
-                  </div>
-                </div>
+                {current.duration && <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-[12px] text-body"><Icon name="clock" className="h-3.5 w-3.5 text-muted" />{current.duration}</span>}
+              </div>
+            </header>
+            <div className="px-6 py-7 sm:px-8 sm:py-9">
+              {current.type === 'assessment' ? (
+                <DashAssessment course={course} allDone={allDone} answers={answers} setAnswers={setAnswers} result={result} submitQuiz={submitQuiz} busy={busy} passed={passed} id={id}
+                  onBack={() => setView(blocks.filter(b => b.type === 'module').pop()?.id || 'intro')}
+                  onRetry={() => { setResult(null); setAnswers([]); setError(''); }} />
+              ) : current.type === 'completion' ? (
+                <DashCompletion result={result} passed={passed} id={id} />
               ) : (
                 <>
-                  <div className="mt-6 space-y-5">
-                    {course.questions.map((q, n) => (
-                      <fieldset key={n} className="rounded-xl border border-border bg-mist p-4">
-                        <legend className="mb-3 px-1 text-[13px] font-medium text-forest">{n + 1}. {q.q}</legend>
-                        <div className="space-y-2">
-                          {q.options.map((opt, k) => (
-                            <label key={k} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[13px] ${answers[n] === k ? 'border-lake bg-white text-forest' : 'border-border bg-white/70 text-body hover:border-lake/40'}`}>
-                              <input type="radio" name={`q-${n}`} checked={answers[n] === k} onChange={() => { const next = [...answers]; next[n] = k; setAnswers(next); }} />
-                              <span>{opt}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                    ))}
-                  </div>
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <button onClick={submitQuiz} disabled={busy} className={btn}>{busy ? 'Submitting…' : 'Submit assessment'}</button>
-                    <button onClick={() => setIdx(lessons.length - 1)} className={btnSoft}>Review last lesson</button>
+                  <DashImage image={current.image} />
+                  {(current.sections || []).map((s, i) => <DashSection key={i} section={s} />)}
+                  <DashInfographic info={current.infographic} />
+                  <DashNotice notice={current.notice} />
+                  {current.takeaway && <DashTakeaway text={current.takeaway} />}
+                  {current.knowledgeCheck && <DashKnowledgeCheck check={current.knowledgeCheck} value={checks[current.id]} onChange={k => setChecks(s => ({ ...s, [current.id]: k }))} />}
+                  <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+                    <button type="button" onClick={() => setView(previous.id)} disabled={!previous} className={btnSoft + ' disabled:opacity-50'}>Previous</button>
+                    {current.type === 'module' ? (
+                      <button type="button" onClick={() => completeModule(current)} disabled={busy} className={btn}>
+                        {busy ? 'Saving…' : current.complete ? (next ? 'Next section' : 'Go to assessment') : 'Mark module complete & continue'}
+                      </button>
+                    ) : next ? (
+                      <button type="button" onClick={() => setView(next.id)} className={btn}>{next.type === 'assessment' ? 'Go to final assessment' : `Start ${next.title.replace('Module ', 'Module ')}`}</button>
+                    ) : null}
                   </div>
                 </>
               )}
-              {passed && !result?.passed && <p className="mt-4 text-[13px] text-body">You have already passed this course. <Link to={`/learn/certificates/${id}`} className="font-medium text-lake hover:underline">View your certificate</Link>.</p>}
-            </>
-          )}
-        </section>
+            </div>
+          </div>
+        </main>
       </div>
     </Wrap>
   );

@@ -21,20 +21,31 @@ const card = 'rounded-xl border border-border bg-white p-5';
 export function CourseEditor() {
   const { id } = useParams();
   const nav = useNavigate();
-  const blank = { title: '', description: '', category: '', pass_mark: 70, skills: [], lessons: [{ title: '', body: '', video_url: '', duration_min: 5 }], questions: [{ q: '', options: ['', ''], answer: 0 }] };
+  const blank = { title: '', description: '', category: '', pass_mark: 70, skills: [], durationLabel: '', lessons: [{ title: '', body: '', video_url: '', duration_min: 5 }], questions: [{ q: '', options: ['', ''], answer: 0 }] };
   const [c, setC] = useState(blank);
+  const [modulesText, setModulesText] = useState('[]');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(!id);
-  useEffect(() => { if (id) api('/admin/courses/' + id).then(d => setC({ ...blank, ...d, skills: d.skills || [] })).finally(() => setReady(true)); }, [id]);
+  useEffect(() => {
+    if (id) api('/admin/courses/' + id).then(d => {
+      setC({ ...blank, ...d, skills: d.skills || [] });
+      setModulesText(JSON.stringify(d.modules || [], null, 2));
+    }).finally(() => setReady(true));
+  }, [id]);
   if (!ready) return <p className="text-sm text-ink/70">Loading course…</p>;
   const up = (k, v) => setC(s => ({ ...s, [k]: v }));
   const upL = (i, k, v) => up('lessons', c.lessons.map((l, n) => n === i ? { ...l, [k]: v } : l));
   const upQ = (i, p) => up('questions', c.questions.map((x, n) => n === i ? { ...x, ...p } : x));
   const move = (i, d) => { const a = [...c.lessons], j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; up('lessons', a); };
   const save = async e => {
-    e.preventDefault(); setErr(''); setBusy(true);
-    try { await api(id ? '/admin/courses/' + id : '/admin/courses', { method: id ? 'PUT' : 'POST', body: c }); nav('/admin/courses'); }
+    e.preventDefault(); setErr('');
+    let modules;
+    try { modules = JSON.parse(modulesText); }
+    catch { setErr('Dashboard modules is not valid JSON.'); return; }
+    if (!Array.isArray(modules)) { setErr('Dashboard modules must be a JSON array of blocks.'); return; }
+    setBusy(true);
+    try { await api(id ? '/admin/courses/' + id : '/admin/courses', { method: id ? 'PUT' : 'POST', body: { ...c, modules } }); nav('/admin/courses'); }
     catch (x) { setErr(x.message); } finally { setBusy(false); }
   };
   const del = async () => { if (confirm('Delete this course and all learner progress in it?')) { await api('/admin/courses/' + id, { method: 'DELETE' }); nav('/admin/courses'); } };
@@ -51,7 +62,12 @@ export function CourseEditor() {
           <label className="block text-sm font-medium">Pass mark (%)<input type="number" min="1" max="100" className={inp + ' mt-1'} value={c.pass_mark} onChange={e => up('pass_mark', e.target.value)} /></label>
         </div>
         <label className="block text-sm font-medium">Description<textarea className={inp + ' mt-1 min-h-24'} placeholder="Short description" value={c.description || ''} onChange={e => up('description', e.target.value)} /></label>
+        <label className="block text-sm font-medium">Duration label (shown in the course sidebar)<input className={inp + ' mt-1'} placeholder="5 modules · 25–35 minutes · 10-question assessment" value={c.durationLabel || ''} onChange={e => up('durationLabel', e.target.value)} /></label>
         <label className="block text-sm font-medium">Skills learners gain (one per line)<textarea className={inp + ' mt-1 min-h-24'} placeholder={'Apply hand hygiene\nUse protective equipment safely'} value={(c.skills || []).join('\n')} onChange={e => up('skills', e.target.value.split('\n'))} /></label>
+        <label className="block text-sm font-medium">Dashboard modules (JSON)
+          <textarea className={inp + ' mt-1 min-h-48 font-mono text-[12px]'} spellCheck="false" value={modulesText} onChange={e => setModulesText(e.target.value)} />
+          <span className="mt-1 block text-xs font-normal text-ink/60">Array of blocks with type <code>intro</code>, <code>module</code>, <code>assessment</code> or <code>completion</code>. Module sections must match the lessons below in order and number.</span>
+        </label>
       </section>
 
       <section className="space-y-4">

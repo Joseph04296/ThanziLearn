@@ -113,7 +113,7 @@ app.get('/api/courses/:id', auth(), wrap(async (req, res) => {
   const lessons = await q('select id,title,body,video_url,duration_min from lessons where course_id=$1 order by position', [c.id]);
   const done = (await q('select p.lesson_id from progress p join lessons l on l.id=p.lesson_id where p.user_id=$1 and l.course_id=$2', [req.user.id, c.id])).map(r => r.lesson_id);
   const [a] = await q('select coalesce(bool_or(passed),false) as passed from attempts where user_id=$1 and course_id=$2', [req.user.id, c.id]);
-  res.json({ course: { id: c.id, title: c.title, description: c.description, pass_mark: c.pass_mark, questions: c.questions.map(x => ({ q: x.q, options: x.options })) }, lessons, done, passed: a.passed });
+  res.json({ course: { id: c.id, title: c.title, description: c.description, category: c.category, skills: c.skills, durationLabel: c.duration_label, pass_mark: c.pass_mark, modules: c.modules, questions: c.questions.map(x => ({ q: x.q, options: x.options, explain: x.explain })) }, lessons, done, passed: a.passed });
 }));
 app.post('/api/lessons/:id/complete', auth(), wrap(async (req, res) => {
   const [lesson] = await q('select course_id from lessons where id=$1', [req.params.id]);
@@ -132,7 +132,8 @@ app.post('/api/courses/:id/quiz', auth(), wrap(async (req, res) => {
   const right = c.questions.filter((x, i) => a[i] === x.answer).length;
   const score = Math.round(100 * right / (c.questions.length || 1)), passed = score >= c.pass_mark;
   await q('insert into attempts(user_id,course_id,score,passed) values($1,$2,$3,$4)', [req.user.id, req.params.id, score, passed]);
-  res.json({ score, passed, correct: right, total: c.questions.length, pass_mark: c.pass_mark });
+  const breakdown = c.questions.map((x, i) => ({ q: x.q, correct: a[i] === x.answer, answerText: x.options[x.answer], chosen: a[i], explain: x.explain }));
+  res.json({ score, passed, correct: right, total: c.questions.length, pass_mark: c.pass_mark, breakdown });
 }));
 app.get('/api/certificates/:id/pdf', auth(), wrap(async (req, res) => {
   const [row] = await q(`select u.name as learner_name,c.title as course_title,
@@ -167,9 +168,14 @@ app.get('/api/admin/overview', auth(['admin', 'supervisor']), wrap(async (req, r
 const clean = b => {
   const lessons = (b.lessons || []).filter(l => (l.title || '').trim());
   const questions = (b.questions || []).filter(x => (x.q || '').trim()).map(x => ({ q: x.q.trim(), options: (x.options || []).map(o => (o || '').trim()), answer: x.answer }));
+  let modules = b.modules;
+  if (typeof modules === 'string') {
+    try { modules = JSON.parse(modules); } catch { return { error: 'Modules JSON is not valid' }; }
+  }
+  modules = Array.isArray(modules) ? modules : [];
   if (!(b.title || '').trim() || !lessons.length) return { error: 'Add a title and at least one lesson' };
   if (!questions.length || questions.some(x => x.options.length < 2 || x.options.some(o => !o) || !(x.answer >= 0 && x.answer < x.options.length))) return { error: 'Add at least one quiz question, fill in every option, and pick the correct answer' };
-  return { lessons, questions };
+  return { lessons, questions, modules };
 };
 const sk = b => JSON.stringify((b.skills || []).map(x => (x || '').trim()).filter(Boolean));
 const pm = b => Math.min(100, Math.max(1, +b.pass_mark || 70));
@@ -179,7 +185,7 @@ const putLesson = (cid, i, l) => l.id
 app.post('/api/admin/courses', auth(['admin']), wrap(async (req, res) => {
   const v = clean(req.body); if (v.error) return res.status(400).json(v);
   const b = req.body;
-  const [c] = await q('insert into courses(title,description,category,pass_mark,questions,skills) values($1,$2,$3,$4,$5,$6) returning id', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), sk(b)]);
+  const [c] = await q('insert into courses(title,description,category,pass_mark,questions,skills,modules,duration_label) values($1,$2,$3,$4,$5,$6,$7,$8) returning id', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), sk(b), JSON.stringify(v.modules), b.duration_label || null]);
   for (const [i, l] of v.lessons.entries()) await putLesson(c.id, i, { ...l, id: null });
   res.json({ id: c.id });
 }));
@@ -206,7 +212,7 @@ app.get('/api/admin/courses/:id', auth(['admin']), wrap(async (req, res) => {
 app.put('/api/admin/courses/:id', auth(['admin']), wrap(async (req, res) => {
   const v = clean(req.body); if (v.error) return res.status(400).json(v);
   const b = req.body, id = req.params.id;
-  await q('update courses set title=$1,description=$2,category=$3,pass_mark=$4,questions=$5,skills=$7 where id=$6', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), id, sk(b)]);
+  await q('update courses set title=$1,description=$2,category=$3,pass_mark=$4,questions=$5,skills=$7,modules=$8,duration_label=$9 where id=$6', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), id, sk(b), JSON.stringify(v.modules), b.duration_label || null]);
   await q('delete from lessons where course_id=$1 and not (id = any($2::int[]))', [id, v.lessons.filter(l => l.id).map(l => l.id)]);
   for (const [i, l] of v.lessons.entries()) await putLesson(id, i, l);
   res.json({ id });
@@ -234,6 +240,8 @@ app.get('/', (req, res) => res.send('ThanziLearn API is running'));
 (async () => {
   try {
     await pool.query("alter table courses add column if not exists skills jsonb not null default '[]'");
+    await pool.query("alter table courses add column if not exists modules jsonb not null default '[]'");
+    await pool.query('alter table courses add column if not exists duration_label text');
     await pool.query('alter table courses add column if not exists hidden boolean not null default false');
     await pool.query('alter table lessons add column if not exists duration_min int not null default 5');
     await pool.query(`create table if not exists enrollments(
