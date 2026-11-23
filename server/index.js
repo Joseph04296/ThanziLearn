@@ -185,7 +185,7 @@ const putLesson = (cid, i, l) => l.id
 app.post('/api/admin/courses', auth(['admin']), wrap(async (req, res) => {
   const v = clean(req.body); if (v.error) return res.status(400).json(v);
   const b = req.body;
-  const [c] = await q('insert into courses(title,description,category,pass_mark,questions,skills,modules,duration_label) values($1,$2,$3,$4,$5,$6,$7,$8) returning id', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), sk(b), JSON.stringify(v.modules), b.duration_label || null]);
+  const [c] = await q('insert into courses(title,description,category,pass_mark,questions,skills,modules,duration_label) values($1,$2,$3,$4,$5,$6,$7,$8) returning id', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), sk(b), JSON.stringify(v.modules), b.durationLabel || b.duration_label || null]);
   for (const [i, l] of v.lessons.entries()) await putLesson(c.id, i, { ...l, id: null });
   res.json({ id: c.id });
 }));
@@ -212,7 +212,7 @@ app.get('/api/admin/courses/:id', auth(['admin']), wrap(async (req, res) => {
 app.put('/api/admin/courses/:id', auth(['admin']), wrap(async (req, res) => {
   const v = clean(req.body); if (v.error) return res.status(400).json(v);
   const b = req.body, id = req.params.id;
-  await q('update courses set title=$1,description=$2,category=$3,pass_mark=$4,questions=$5,skills=$7,modules=$8,duration_label=$9 where id=$6', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), id, sk(b), JSON.stringify(v.modules), b.duration_label || null]);
+  await q('update courses set title=$1,description=$2,category=$3,pass_mark=$4,questions=$5,skills=$7,modules=$8,duration_label=$9 where id=$6', [b.title, b.description, b.category, pm(b), JSON.stringify(v.questions), id, sk(b), JSON.stringify(v.modules), b.durationLabel || b.duration_label || null]);
   await q('delete from lessons where course_id=$1 and not (id = any($2::int[]))', [id, v.lessons.filter(l => l.id).map(l => l.id)]);
   for (const [i, l] of v.lessons.entries()) await putLesson(id, i, l);
   res.json({ id });
